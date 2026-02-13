@@ -10,6 +10,16 @@ MarsXZ Media — настольное приложение для загрузк
 
 ---
 
+## 📸 Скриншоты
+
+![Главное окно](Screenshot/main.png)
+![Загрузка](Screenshot/download.png)
+![История](Screenshot/history.png)
+![Настройки](Screenshot/settings.png)
+![О программе](Screenshot/about_the_program.png)
+
+---
+
 ## Основные возможности
 
 • Загрузка видео с YouTube в формате MP4  
