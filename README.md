@@ -12,11 +12,29 @@ MarsXZ Media — настольное приложение для загрузк
 
 ## 📸 Скриншоты
 
-![Главное окно](Screenshot/main.png)
-![Загрузка](Screenshot/download.png)
-![История](Screenshot/history.png)
-![Настройки](Screenshot/settings.png)
-![О программе](Screenshot/about_the_program.png)
+<p align="center">
+  <a href="Screenshot/main.png">
+    <img src="Screenshot/main.png" width="45%" alt="Главное окно">
+  </a>
+  <a href="Screenshot/download.png">
+    <img src="Screenshot/download.png" width="45%" alt="Загрузка">
+  </a>
+</p>
+
+<p align="center">
+  <a href="Screenshot/history.png">
+    <img src="Screenshot/history.png" width="45%" alt="История">
+  </a>
+  <a href="Screenshot/settings.png">
+    <img src="Screenshot/settings.png" width="45%" alt="Настройки">
+  </a>
+</p>
+
+<p align="center">
+  <a href="Screenshot/about_the_program.png">
+    <img src="Screenshot/about_the_program.png" width="45%" alt="О программе">
+  </a>
+</p>
 
 ---
 
