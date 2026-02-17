@@ -494,8 +494,7 @@ private async Task StartDownloadLoop()
                             {
                                 string tempExtractPath = finalExePath + ".new";
                                 entry.ExtractToFile(tempExtractPath, true);
-                                if (File.Exists(finalExePath)) File.Delete(finalExePath);
-                                File.Move(tempExtractPath, finalExePath);
+                                ReplaceFileWithRetry(tempExtractPath, finalExePath);
                                 Log("I", "FFmpeg успешно извлечен.");
                             }
                             else throw new Exception("ffmpeg.exe не найден в архиве.");
@@ -516,8 +515,7 @@ private async Task StartDownloadLoop()
             else
             {
                 // Для yt-dlp просто переименовываем из .download в .exe
-                if (File.Exists(finalExePath)) File.Delete(finalExePath);
-                File.Move(downloadPath, finalExePath);
+                ReplaceFileWithRetry(downloadPath, finalExePath);
                 Log("I", $"{target.Name} успешно установлен.");
             }
         }
@@ -559,6 +557,32 @@ private void UpdateDownloadUI(string name, long current, long total, double spee
     }
 }
         // ================= ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =================
+
+        private void ReplaceFileWithRetry(string sourcePath, string targetPath)
+{
+    Exception? lastError = null;
+
+    for (int i = 0; i < 20; i++)
+    {
+        try
+        {
+            if (File.Exists(targetPath))
+                File.Delete(targetPath);
+
+            File.Move(sourcePath, targetPath);
+            return;
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        {
+            lastError = ex;
+            Thread.Sleep(250);
+        }
+    }
+
+    throw lastError ?? new IOException($"?? ??????? ???????? ????: {Path.GetFileName(targetPath)}");
+}
+
+
         private async Task CleanupFileAsync(string? filePath = null)
 {
     try
@@ -586,7 +610,7 @@ private void DeleteWithRetry(string path)
             if (File.Exists(path)) File.Delete(path);
             break;
         }
-        catch (IOException) { Thread.Sleep(200); }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) { Thread.Sleep(250); }
     }
 }
         // [ИЗМЕНЕНИЕ 2] Окно ошибки "Программа не была установлена"
