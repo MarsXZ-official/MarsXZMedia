@@ -9,7 +9,7 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20" Spacing="10">
-            <TextBlock Text="MarsXZ Media v1.0"
+            <TextBlock Text="MarsXZ Media v1.1.0"
                        FontFamily="{StaticResource McFont}"
                        FontSize="22"
                        FontWeight="Bold"
@@ -55,7 +55,7 @@
 
             <Separator/>
 
-            <TextBlock Text="© MarsXZ Studio, 2026. Все права защищены."
+            <TextBlock Text="© MarsXZ, 2026. Все права защищены."
                        TextWrapping="Wrap"/>
             <TextBlock Text="Сторонние компоненты используются по лицензии их авторов."
                        TextWrapping="Wrap"/>
