@@ -69,15 +69,35 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <TextView
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="MarsXZ Media v1.1.0"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:layout_marginBottom="24dp"
-                android:textColor="#000000"/>
+                android:layout_marginBottom="24dp">
+
+                <TextView
+                    android:id="@+id/tvVersion"
+                    android:layout_width="match_parent"
+                    android:layout_height="58dp"
+                    android:gravity="center"
+                    android:text="MarsXZ Media v1.1.0"
+                    android:textColor="#000000"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="362dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/monocraft"
+                    android:rotation="0"
+                    android:text="Бета!"
+                    android:textAlignment="center"
+                    android:textColor="#FFFF00"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:translationX="0dp"
+                    android:translationY="20dp" />
+            </FrameLayout>
 
             <TextView
                 android:layout_width="match_parent"
