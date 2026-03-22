@@ -16,6 +16,10 @@ object YoutubeSearchService {
             return Result.failure(IllegalStateException("Не задан YouTube API key"))
         }
 
+        if (ANDROID_CERT_SHA1.isBlank() || ANDROID_CERT_SHA1 == "PUT_YOUR_ANDROID_CERT_SHA1_HERE") {
+            return Result.failure(IllegalStateException("Не задан SHA1-хеш для Android-сертификата"))
+        }
+
         val videoId = YoutubeUrlParser.extractVideoId(inputUrl)
             ?: return Result.failure(IllegalArgumentException("Не удалось распознать YouTube ссылку"))
 
