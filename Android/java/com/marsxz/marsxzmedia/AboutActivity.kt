@@ -6,10 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowInsetsControllerCompat
 
 class AboutActivity : AppCompatActivity() {
 
@@ -22,7 +24,20 @@ class AboutActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Внутри onCreate, перед setContentView
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        )
+
+// Чтобы иконки (время, батарея) были темными на белом фоне:
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true // Темные иконки статус-бара
+            isAppearanceLightNavigationBars = true // Темные иконки навигации
+        }
+
         setContentView(R.layout.activity_about)
+        UiSoundPlayer.init(this)
 
         // Инициализация View (ID из нашего нового XML)
         backButton = findViewById(R.id.backButton)
@@ -40,6 +55,7 @@ class AboutActivity : AppCompatActivity() {
 
         tvSupportEmail.text = SUPPORT_EMAIL
         tvSupportEmail.setOnClickListener {
+            UiSoundPlayer.playClick() // ДОБАВИТЬ ЗВУК
             sendEmail()
         }
 

@@ -78,7 +78,7 @@ namespace MarsXZMedia;
     
     // 2. ОПРЕДЕЛЯЕМ ПУТЬ ПО УМОЛЧАНИЮ (рядом с программой)
     string defaultDownloadPath = AppPaths.DownloadsRoot;
-    bool isDefault = MainWindow.UseDefaultPath || IsUsingDefaultPath();
+    bool isDefault = MainWindow.UseDefaultPath; // <--- Убираем проверку по тексту
 if (isDefault && MainWindow.SeparatePaths) MainWindow.SeparatePaths = false;
 UseDefaultPathCheckBox.SetCurrentValue(CheckBox.IsCheckedProperty, isDefault);
 bool isSeparate = MainWindow.SeparatePaths;
@@ -277,35 +277,33 @@ private void ValidatePaths()
 
     _hasValidationError = hasError;
 
-    // === ЕДИНСТВЕННОЕ место управления ErrorTextBlock ===
-    if (hasError)
+    // === РАЗДЕЛЯЕМ СООБЩЕНИЯ НА ДВА БЛОКА ===
+
+    // 1. Информационное сообщение (Серое) отправляем в InfiniteExtraText
+    if (InfiniteExtraText != null)
     {
         if (MainWindow.LogAutoDeleteInfinite)
         {
-            ErrorTextBlock.Text =
-                "Авто-удаление отключено (вечное хранилище)\n" +
-                errorMessage;
+            InfiniteExtraText.Text = "Авто-удаление отключено (вечное хранилище)";
+            InfiniteExtraText.Foreground = Brushes.Gray;
+            InfiniteExtraText.IsVisible = true;
         }
         else
         {
-            ErrorTextBlock.Text = errorMessage;
+            InfiniteExtraText.IsVisible = false;
         }
+    }
 
+    // 2. Ошибку путей (Красная) оставляем в ErrorTextBlock
+    if (hasError)
+    {
+        ErrorTextBlock.Text = errorMessage.TrimEnd(); // TrimEnd убирает лишние переносы строк
         ErrorTextBlock.Foreground = Brushes.Red;
         ErrorTextBlock.IsVisible = true;
     }
     else
     {
-        if (MainWindow.LogAutoDeleteInfinite)
-        {
-            ErrorTextBlock.Text = "Авто-удаление отключено (вечное хранилище)";
-            ErrorTextBlock.Foreground = Brushes.Gray;
-            ErrorTextBlock.IsVisible = true;
-        }
-        else
-        {
-            ErrorTextBlock.IsVisible = false;
-        }
+        ErrorTextBlock.IsVisible = false;
     }
 }
 
@@ -527,6 +525,13 @@ private void UseDefaultPathUnchecked(object? sender, RoutedEventArgs e)
             MainWindow.MusicPath = MainWindow.VideoPath;
         }
 
+        if (_updatingUI) return;
+    MainWindow.UseDefaultPath = false;
+
+    // Очищаем пути, чтобы заставить пользователя выбрать свой
+    MainWindow.VideoPath = ""; 
+    MainWindow.MusicPath = "";
+
         UpdatePathControls();
         UpdateUI();
     }
@@ -641,11 +646,13 @@ private void UseDefaultPathUnchecked(object? sender, RoutedEventArgs e)
     }
 
     private bool IsUsingDefaultPath()
-    {
-        return MainWindow.VideoPath == AppPaths.DownloadsRoot &&
-               MainWindow.MusicPath == AppPaths.DownloadsRoot;
-    }
-
+{
+    // Путь считается "по умолчанию", только если он совпадает с системным и НЕ пустой
+    if (string.IsNullOrWhiteSpace(MainWindow.VideoPath)) return false;
+    
+    return MainWindow.VideoPath == AppPaths.DownloadsRoot &&
+           MainWindow.MusicPath == AppPaths.DownloadsRoot;
+}
 
     private void AutoSaveOnLeave()
     {

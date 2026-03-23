@@ -1056,11 +1056,12 @@ public async Task UpdateInlineProgress(double percent, string message)
                     langName = c.lang.ToUpperInvariant();
                 }
 
-                string noteLabel = "";
+                // Формируем raw-строку для нового форматтера
                 string nk = c.noteKey?.ToLowerInvariant() ?? "";
-                if (nk == "original") noteLabel = "(Оригинальная)";
-                else if (nk == "default") noteLabel = "";
-                string displayName = string.IsNullOrEmpty(noteLabel) ? langName : $"{langName} {noteLabel}";
+                string extraInfo = (nk == "original") ? "original" : "dub";
+                string rawTrack = $"{langName} ({extraInfo})";
+
+                string displayName = FormatAudioTrackName(rawTrack);
 
                 var item = new ListBoxItem
                 {
@@ -1083,7 +1084,7 @@ public async Task UpdateInlineProgress(double percent, string message)
 
             var item = new ListBoxItem
             {
-                Content = "Оригинальная",
+                Content = "Оригинал",
                 Tag = $"{best.id};;{best.noteKey};{(best.isAudioOnly ? "audio" : "muxed")}"
             };
             AudioList.Items.Add(item);
@@ -1102,8 +1103,69 @@ public async Task UpdateInlineProgress(double percent, string message)
         AudioLabel.IsVisible = showAudioSelector;
         AudioList.IsVisible = showAudioSelector;
 
+        ApplyAudioTrackLabels();   // ← это заменит старый ручной выбор индекса и видимость
         ApplyDownloadTypeUI();
     }
+
+private string FormatAudioTrackName(string raw)
+{
+    if (string.IsNullOrWhiteSpace(raw)) return raw ?? string.Empty;
+
+    // Улучшенный regex — берёт ВСЁ до ПОСЛЕДНЕЙ пары скобок
+    // Работает даже с "Китайский (упрощ.) (original)"
+    var regex = new Regex(@"(.*)\s*\(([^)]+)\)$");
+    var match = regex.Match(raw);
+
+    if (match.Success)
+    {
+        string language = match.Groups[1].Value.Trim();
+        string extraInfo = match.Groups[2].Value.Trim();
+
+        // 1. Диалекты и письменность
+        bool isSimplified = extraInfo.Contains("Simplified", StringComparison.OrdinalIgnoreCase) ||
+                            extraInfo.Contains("упрощ", StringComparison.OrdinalIgnoreCase);
+        bool isTraditional = extraInfo.Contains("Traditional", StringComparison.OrdinalIgnoreCase) ||
+                             extraInfo.Contains("традиц", StringComparison.OrdinalIgnoreCase);
+
+        if (isSimplified) language = $"{language} (Упрощенный)";
+        if (isTraditional) language = $"{language} (Традиционный)";
+
+        // 2. Оригинал / Дубляж
+        bool isOriginal = extraInfo.Contains("original", StringComparison.OrdinalIgnoreCase) ||
+                          extraInfo.Contains("оригин", StringComparison.OrdinalIgnoreCase);
+
+        string type = isOriginal ? "Оригинал" : "Дубляж";
+
+        return $"{language} ▪ {type}";
+    }
+
+    // Если скобок нет — считаем оригиналом (как в вашем Kotlin)
+    return $"{raw} ▪ Оригинал";
+}
+
+private void ApplyAudioTrackLabels()
+{
+    // Авто-выбор "Оригинал" (точно как в Kotlin)
+    int preferredIndex = -1;
+    for (int i = 0; i < AudioList.Items.Count; i++)
+    {
+        if (AudioList.Items[i] is ListBoxItem item &&
+            item.Content?.ToString() is string content &&
+            (content.Contains("Оригинал", StringComparison.OrdinalIgnoreCase) ||
+             content.Contains("Original", StringComparison.OrdinalIgnoreCase)))
+        {
+            preferredIndex = i;
+            break;
+        }
+    }
+    AudioList.SelectedIndex = preferredIndex >= 0 ? preferredIndex : 0;
+
+    // Видимость (как в Kotlin)
+    bool showAudio = AudioList.Items.Count > 1;
+    AudioLabel.IsVisible = showAudio;
+    AudioList.IsVisible = showAudio;
+}
+
     private string? PickMuxedFormatId(string lang, string noteKey, int maxHeight)
     {
         if (string.IsNullOrWhiteSpace(lang)) return null;

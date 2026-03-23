@@ -30,6 +30,8 @@ import android.content.Intent
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowInsetsControllerCompat
+import android.view.WindowManager
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -83,6 +85,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Внутри onCreate, перед setContentView
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        )
+
+// Чтобы иконки (время, батарея) были темными на белом фоне:
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true // Темные иконки статус-бара
+            isAppearanceLightNavigationBars = true // Темные иконки навигации
+        }
         setContentView(R.layout.activity_main)
 
         UiSoundPlayer.init(this)
@@ -158,6 +171,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupBottomNavigation() {
         bottomNavigation.setOnItemSelectedListener { item ->
+            UiSoundPlayer.playClick() // ДОБАВИТЬ ЗВУК при смене вкладки
             when (item.itemId) {
                 R.id.nav_home -> {
                     showHomeScreen()
@@ -726,17 +740,61 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyAudioTrackLabels(tracks: List<String>) {
-        currentAudioTracks = if (tracks.isEmpty()) listOf("Авто") else tracks
+        // Преобразуем технические названия в красивый формат
+        val formattedTracks = tracks.map { rawTrack ->
+            formatAudioTrackName(rawTrack)
+        }
+
+        currentAudioTracks = if (formattedTracks.isEmpty()) listOf("Авто") else formattedTracks
+
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, currentAudioTracks)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         audioSpinner.adapter = adapter
 
-        val preferredIndex = currentAudioTracks.indexOfFirst { it.contains("Оригинал", ignoreCase = true) }
+        // Ищем индекс для авто-выбора "Оригинал"
+        val preferredIndex = currentAudioTracks.indexOfFirst {
+            it.contains("Оригинал", ignoreCase = true) || it.contains("Original", ignoreCase = true)
+        }
         audioSpinner.setSelection(if (preferredIndex >= 0) preferredIndex else 0)
 
         val showAudio = currentAudioTracks.size > 1
         audioLabel.visibility = if (showAudio) View.VISIBLE else View.GONE
         audioSpinner.visibility = if (showAudio) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Вспомогательная функция для форматирования строк типа "Russian (original)" -> "Russian ▪ Оригинал"
+     */
+
+    private fun formatAudioTrackName(raw: String): String {
+        if (raw.isBlank()) return raw
+
+        // Регулярное выражение для поиска текста вне и внутри скобок: "Язык (Инфо)"
+        val regex = Regex("""(.+?)\s*\((.+?)\)""")
+        val match = regex.find(raw)
+
+        return if (match != null) {
+            var language = match.groupValues[1].trim()
+            val extraInfo = match.groupValues[2].trim()
+
+            // 1. Обработка диалектов и письменности (например, Китайский)
+            val isSimplified = extraInfo.contains("Simplified", ignoreCase = true) || extraInfo.contains("упрощ", ignoreCase = true)
+            val isTraditional = extraInfo.contains("Traditional", ignoreCase = true) || extraInfo.contains("традиц", ignoreCase = true)
+
+            if (isSimplified) language = "$language (Упрощенный)"
+            if (isTraditional) language = "$language (Традиционный)"
+
+            // 2. Определение типа: Оригинал или Дубляж
+            val isOriginal = extraInfo.contains("original", ignoreCase = true) || extraInfo.contains("оригин", ignoreCase = true)
+
+            // Если в скобках написано то же самое, что и в языке, или просто технический код — это Дубляж
+            val type = if (isOriginal) "Оригинал" else "Дубляж"
+
+            "$language ▪ $type"
+        } else {
+            // Если скобок нет, по умолчанию считаем Оригиналом
+            "$raw ▪ Оригинал"
+        }
     }
 
     private fun ensureNotificationPermission() {

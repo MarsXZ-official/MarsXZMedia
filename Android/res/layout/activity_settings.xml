@@ -44,8 +44,9 @@
             android:layout_marginBottom="4dp"
             android:background="@android:color/transparent"
             android:contentDescription="Назад"
-            android:src="@android:drawable/ic_media_previous"
-            android:tint="#333333"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_close"
+            app:tint="#333333"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />

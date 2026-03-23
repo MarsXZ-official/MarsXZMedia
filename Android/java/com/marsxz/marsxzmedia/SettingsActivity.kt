@@ -242,13 +242,44 @@ class SettingsActivity : AppCompatActivity() {
         isUpdatingUI = false
     }
 
+    private fun hasChanges(): Boolean {
+        val snapshot = initialSnapshot ?: return false
+
+        // Сравниваем каждое поле
+        return cbUseDefaultPath.isChecked != snapshot.useDefaultPath ||
+                cbSeparatePaths.isChecked != snapshot.separatePaths ||
+                cbNoSubfolders.isChecked != snapshot.noSubfolders ||
+                cbDontOpenFile.isChecked != snapshot.dontOpenFile ||
+                cbDisableLogs.isChecked != snapshot.disableLogs ||
+                cbInfiniteLogs.isChecked != snapshot.infiniteLogs ||
+                etMaxDays.text.toString().toIntOrNull() != snapshot.maxLogDays
+    }
+
     private fun setupListeners() {
         backButton.setOnClickListener {
+            // 1. Всегда играем клик в начале
             UiSoundPlayer.playClick()
-            saveAndClose()
+
+            if (hasChanges()) {
+                // ЕСЛИ БЫЛИ ИЗМЕНЕНИЯ:
+                it.postDelayed({
+                    UiSoundPlayer.playApply() // Звук применения
+                    SettingsNotificationHelper.showSettingsSaved(this) // Уведомление
+
+                    it.postDelayed({
+                        saveAndClose()
+                    }, 150)
+                }, 100)
+            } else {
+                // ЕСЛИ НИЧЕГО НЕ МЕНЯЛОСЬ:
+                it.postDelayed({
+                    finish() // Просто выходим без уведомлений
+                }, 100)
+            }
         }
 
         cbUseDefaultPath.setOnCheckedChangeListener { _, isChecked ->
+            UiSoundPlayer.playClick() // Добавляем звук
             if (isUpdatingUI) return@setOnCheckedChangeListener
 
             if (isChecked) {
@@ -269,6 +300,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         cbSeparatePaths.setOnCheckedChangeListener { _, isChecked ->
+            UiSoundPlayer.playClick() // Добавляем звук
             if (isUpdatingUI) return@setOnCheckedChangeListener
             prefs.edit().putBoolean("separate_paths", isChecked).apply()
 
@@ -295,24 +327,29 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         btnExportLogs.setOnClickListener {
+            UiSoundPlayer.playClick() // ДОБАВИТЬ ЗВУК
             exportLogs()
         }
 
         cbNoSubfolders.setOnCheckedChangeListener { _, checked ->
+            UiSoundPlayer.playClick() // ДОБАВИТЬ ЗВУК
             prefs.edit().putBoolean("no_subfolders", checked).apply()
         }
 
         cbDontOpenFile.setOnCheckedChangeListener { _, checked ->
+            UiSoundPlayer.playClick() // ДОБАВИТЬ ЗВУК
             prefs.edit().putBoolean("dont_open_file", checked).apply()
         }
 
         cbDisableLogs.setOnCheckedChangeListener { _, checked ->
+            UiSoundPlayer.playClick() // Добавляем звук
             prefs.edit().putBoolean("disable_logs", checked).apply()
             LogMaintenance.enforcePolicy(this)
             updateUI()
         }
 
         cbInfiniteLogs.setOnCheckedChangeListener { _, checked ->
+            UiSoundPlayer.playClick() // Добавляем звук
             prefs.edit().putBoolean("infinite_logs", checked).apply()
 
             if (!checked) {
@@ -457,8 +494,6 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun buildCurrentSnapshot(): SettingsSnapshot {
-        val maxDays = etMaxDays.text?.toString()?.toIntOrNull() ?: 365
-
         return SettingsSnapshot(
             useDefaultPath = cbUseDefaultPath.isChecked,
             separatePaths = cbSeparatePaths.isChecked,
@@ -466,9 +501,9 @@ class SettingsActivity : AppCompatActivity() {
             dontOpenFile = cbDontOpenFile.isChecked,
             disableLogs = cbDisableLogs.isChecked,
             infiniteLogs = cbInfiniteLogs.isChecked,
-            maxLogDays = maxDays,
             videoPath = prefs.getString("video_path", null),
-            musicPath = prefs.getString("music_path", null)
+            musicPath = prefs.getString("music_path", null), // Добавлена запятая
+            maxLogDays = prefs.getInt("max_log_days", 365)  // Удален дубликат
         )
     }
 

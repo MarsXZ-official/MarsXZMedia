@@ -9,11 +9,15 @@ import java.net.URL
 object YoutubeSearchService {
     private const val API_KEY = "PUT_YOUR_YOUTUBE_DATA_API_KEY_HERE"
     private const val ANDROID_PACKAGE = "com.marsxz.marsxzmedia"
-    private const val ANDROID_CERT_SHA1 = "PUT_YOUR_DATA_CERT_SHA1_HERE"
+    private const val ANDROID_CERT_SHA1 = "PUT_YOUR_ANDROID_CERT_SHA1_HERE"
 
     fun searchByUrl(inputUrl: String): Result<VideoInfo> {
         if (API_KEY.isBlank() || API_KEY == "PUT_YOUR_YOUTUBE_DATA_API_KEY_HERE") {
             return Result.failure(IllegalStateException("Не задан YouTube API key"))
+        }
+
+        if (ANDROID_CERT_SHA1.isBlank() || ANDROID_CERT_SHA1 == "PUT_YOUR_ANDROID_CERT_SHA1_HERE") {
+            return Result.failure(IllegalStateException("Не задан SHA1-хеш для Android-сертификата"))
         }
 
         val videoId = YoutubeUrlParser.extractVideoId(inputUrl)
