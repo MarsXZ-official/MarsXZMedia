@@ -1,5 +1,5 @@
 # MarsXZ Media  
-![License](https://img.shields.io/badge/license-MIT-blue)  
+![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 ![Release](https://img.shields.io/github/v/release/MarsXz8656/MarsXZMedia)  
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Android-green)
 
