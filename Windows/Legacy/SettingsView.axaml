@@ -7,78 +7,85 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Border Margin="20" Padding="15" Background="Transparent">
-            <StackPanel Spacing="10" MaxWidth="580" HorizontalAlignment="Stretch">
-                <TextBlock Text="Настройки приложения" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <StackPanel Spacing="10" MaxWidth="580" HorizontalAlignment="Stretch">
+  
+                    <TextBlock Text="Настройки приложения" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
-                <Separator/>
+                    <Separator/>
 
-                <TextBlock x:Name="VideoPathLabel" Text="Путь к Video и Audio:" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBox x:Name="VideoPathTextBox" 
-                             VerticalContentAlignment="Center" 
-                             TextChanged="VideoPathChanged" 
-                             HorizontalAlignment="Stretch" 
-                             TextWrapping="NoWrap" 
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
-                    <Button x:Name="SelectVideoPathButton" Grid.Column="1" Content="..." Click="SelectVideoPath" Margin="5,0,0,0"/>
-                </Grid>
+                    <TextBlock Text="Внешний вид" FontWeight="Bold" Foreground="Gray" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center" Margin="0,10,0,10">
+                        <CheckBox x:Name="FontChoiceCheckBox" Checked="FontChoiceChanged" Unchecked="FontChoiceChanged"/>
+                        <CheckBox x:Name="SoundThemeCheckBox" Checked="SoundThemeChanged" Unchecked="SoundThemeChanged"/>
+                    </StackPanel>
 
-                <StackPanel x:Name="MusicPanel" IsVisible="False">
-                    <TextBlock Text="Путь к Audio:" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                    <Separator Margin="0,10,0,10"/>
+                    
+                    <TextBlock x:Name="VideoPathLabel" Text="Путь к Video и Audio:" FontWeight="Bold" TextWrapping="Wrap" Foreground="Gray"/>
                     <Grid ColumnDefinitions="*, Auto">
-                        <TextBox x:Name="MusicPathTextBox" 
+                        <TextBox x:Name="VideoPathTextBox" 
                                  VerticalContentAlignment="Center" 
-                                 TextChanged="MusicPathChanged" 
+                                 TextChanged="VideoPathChanged" 
                                  HorizontalAlignment="Stretch" 
                                  TextWrapping="NoWrap" 
-                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
-                        <Button x:Name="SelectMusicPathButton" Grid.Column="1" Content="..." Click="SelectMusicPath" Margin="5,0,0,0"/>
+                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                 Background="#F0F0F0" BorderThickness="0"/>
+                        <Button x:Name="SelectVideoPathButton" Grid.Column="1" Content="..." Click="SelectVideoPath" Margin="10,0,0,0" Background="#D3D3D3"/>
                     </Grid>
+
+                    <StackPanel x:Name="MusicPanel" IsVisible="False">
+                        <TextBlock Text="Путь к Audio:" FontWeight="Bold" Foreground="Gray" Margin="0,8,0,0"/>
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBox x:Name="MusicPathTextBox" 
+                                     VerticalContentAlignment="Center" 
+                                     TextChanged="MusicPathChanged" 
+                                     HorizontalAlignment="Stretch" 
+                                     TextWrapping="NoWrap" 
+                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                     Background="#F0F0F0" BorderThickness="0"/>
+                            <Button x:Name="SelectMusicPathButton" Grid.Column="1" Content="..." Click="SelectMusicPath" Margin="10,0,0,0" Background="#D3D3D3"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <CheckBox x:Name="SeparateCheckBox" Content="Отдельно" Checked="SeparateChecked" Unchecked="SeparateUnchecked" Margin="0,10,0,0"/>
+                    <CheckBox x:Name="CreateSubfoldersCheckBox" Content="Не создавать папки" Checked="CreateSubfoldersChecked" Unchecked="CreateSubfoldersUnchecked"/>
+                    <CheckBox x:Name="DisableOpenFileCheckBox" Content="Не открывать скачанный файл" Checked="DisableOpenFileChecked" Unchecked="DisableOpenFileUnchecked"/>
+                    <CheckBox x:Name="UseDefaultPathCheckBox" Content="Использовать путь по умолчанию" Checked="UseDefaultPathChecked" Unchecked="UseDefaultPathUnchecked"/>
+
+                    <Separator Margin="0,10,0,10"/>
+
+                    <TextBlock Text="Логирование" FontWeight="Bold" Foreground="Gray" HorizontalAlignment="Center"/>
+               
+                    <StackPanel Spacing="10" HorizontalAlignment="Center">
+                        <Button x:Name="ExportLogsButton" Content="ЭКСПОРТ ЛОГОВ" Click="ExportLogs" Width="180" HorizontalAlignment="Center" Background="#E0E0E0" FontWeight="Bold"/>
+                        <CheckBox x:Name="DisableLogsCheckBox" Content="Не создавать логи" Checked="DisableLogsChecked" Unchecked="DisableLogsUnchecked" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,10,0,0" Spacing="8" HorizontalAlignment="Stretch">
+                        <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="Хранить (дней):" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="Gray"/>
+                            <NumericUpDown x:Name="MaxDeleteDaysUpDown" 
+                                           Width="120" 
+                                           Minimum="0" Maximum="365" 
+                                           Increment="1" 
+                                           ValueChanged="MaxDeleteDaysChanged" 
+                                           TextInput="MaxDeleteDaysTextInput"/>
+                        </WrapPanel>
+
+                        <CheckBox x:Name="InfiniteKeepCheckBox" 
+                                  Content="Безгранично" 
+                                  HorizontalAlignment="Center" 
+                                  Checked="InfiniteChecked" 
+                                  Unchecked="InfiniteUnchecked"/>
+       
+                        <TextBlock x:Name="InfiniteExtraText" HorizontalAlignment="Center" IsVisible="False" Foreground="Gray"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="ErrorTextBlock" Foreground="Red" IsVisible="False" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+
+                    <Separator Margin="0,10,0,10"/>
+                    <Button x:Name="AboutButton" Content="О программе" Click="OpenAbout" Width="180" HorizontalAlignment="Center" />
                 </StackPanel>
-
-                <CheckBox x:Name="SeparateCheckBox" Content="Отдельно" Checked="SeparateChecked" Unchecked="SeparateUnchecked"/>
-
-                <CheckBox x:Name="CreateSubfoldersCheckBox" Content="Не создавать папки" Checked="CreateSubfoldersChecked" Unchecked="CreateSubfoldersUnchecked"/>
-
-                <CheckBox x:Name="DisableOpenFileCheckBox" Content="Не открывать скачанный файл в проводнике" Checked="DisableOpenFileChecked" Unchecked="DisableOpenFileUnchecked"/>
-
-                <CheckBox x:Name="UseDefaultPathCheckBox" Content="Использовать путь по умолчанию" Checked="UseDefaultPathChecked" Unchecked="UseDefaultPathUnchecked"/>
-
-                <Separator/>
-
-                <TextBlock Text="Логирование" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                
-                <StackPanel Spacing="10" HorizontalAlignment="Center">
-                    <Button x:Name="ExportLogsButton" Content="Экспорт логов" Click="ExportLogs" Width="180" HorizontalAlignment="Center"/>
-                    <CheckBox x:Name="DisableLogsCheckBox" Content="Не создавать логи" Checked="DisableLogsChecked" Unchecked="DisableLogsUnchecked" HorizontalAlignment="Center"/>
-                </StackPanel>
-
-                <StackPanel Margin="0,10,0,0" Spacing="8" HorizontalAlignment="Stretch">
-                    <TextBlock Text="Авто-удаление логов:" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                    
-                    <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="Хранить (макс. дней):" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <NumericUpDown x:Name="MaxDeleteDaysUpDown" 
-                                       Width="120" 
-                                       Minimum="0" Maximum="365" 
-                                       Increment="1" 
-                                       ValueChanged="MaxDeleteDaysChanged" 
-                                       TextInput="MaxDeleteDaysTextInput"/>
-                    </WrapPanel>
-
-                    <CheckBox x:Name="InfiniteKeepCheckBox" 
-                              Content="Безгранично" 
-                              HorizontalAlignment="Center" 
-                              Checked="InfiniteChecked" 
-                              Unchecked="InfiniteUnchecked"/>
-                    <TextBlock x:Name="InfiniteExtraText" HorizontalAlignment="Center" IsVisible="False"/>
-                </StackPanel>
-
-                <TextBlock x:Name="ErrorTextBlock" Foreground="Red" IsVisible="False" TextWrapping="Wrap" HorizontalAlignment="Center"/>
-
-                <Separator/>
-                <Button x:Name="AboutButton" Content="О программе" Click="OpenAbout" Width="180" HorizontalAlignment="Center" />
-            </StackPanel>
             </Border>
         </ScrollViewer>
     </Grid>

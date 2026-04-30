@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -23,6 +24,26 @@ public partial class App : Application
             AppPaths.EnsureDataDirectories();
             AppPaths.MigrateLegacyData();
             AppSettingsStore.ApplyToMainWindow(AppSettingsStore.Load());
+
+            // --- ПРИМЕНЯЕМ ШРИФТ ПРИ СТАРТЕ ---
+            var app = Avalonia.Application.Current;
+            if (app != null)
+            {
+                try
+                {
+                    // ПРОГРАММА САМА УЗНАЁТ СВОЁ ИМЯ (MarsXZ Media или MarsXZ Media Legacy)
+                    string asmName = typeof(App).Assembly.GetName().Name ?? "MarsXZ Media";
+                    string fontUri = $"avares://{asmName}/Assets/Fonts/Monocraft.ttf#Monocraft";
+
+                    var fontRegular = MainWindow.FontChoice == "MonoCraft" 
+                        ? new FontFamily(fontUri) 
+                        : FontFamily.Default;
+                        
+                    app.Resources["AppFont"] = fontRegular;
+                    app.Resources["AppFontBold"] = fontRegular; // Используем тот же файл
+                }
+                catch { }
+            }
 
             string appDir = AppPaths.AppDirectory;
 

@@ -202,7 +202,7 @@ public SetupWindow()
 
             if (!IsJsRuntimeAvailable())
             {
-                yield return Path.Combine(AppDirectory, "qjs.exe");
+                yield return Path.Combine(AppDirectory, "node.exe");
             }
         }
 
@@ -292,7 +292,7 @@ private async Task StartDownloadLoop()
             Log("W", "Watchdog: установка кажется зависшей, показывайте инструкции для повторной попытки.");
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                if (StatusTextCtrl != null) StatusTextCtrl.Text = "Ожидание... Перезапустите приложение или установите qjs.exe вручную.";
+                if (StatusTextCtrl != null) StatusTextCtrl.Text = "Ожидание... Перезапустите приложение или установите Node.js x86 вручную.";
             });
         }
     });
@@ -303,17 +303,17 @@ private async Task StartDownloadLoop()
         string errorReason = "";
         bool criticalError = false;
 
-        // Проверяем наличие JS runtime (QuickJS) и предлагаем автозагрузку при отсутствии
+        // Проверяем наличие JS runtime (Node.js x86) и предлагаем автозагрузку при отсутствии
         try
         {
-            Log("D", "Проверка наличия JS runtime (QuickJS) ...");
+            Log("D", "Проверка наличия JS runtime (node) ...");
             await Dispatcher.UIThread.InvokeAsync(() => { if (StatusTextCtrl != null) StatusTextCtrl.Text = "Проверка JS runtime..."; });
             bool jsOk = await EnsureJsRuntimeAvailableAsync();
             Log("D", $"Проверка JS runtime завершена: {(jsOk ? "OK" : "NOT_FOUND")}");
             if (!jsOk) {
                 Log("W", "JS runtime не найден или не установлен — некоторые форматы могут быть недоступны");
                 await Dispatcher.UIThread.InvokeAsync(() => {
-                    if (StatusTextCtrl != null) StatusTextCtrl.Text = "QuickJS не найден — некоторые форматы могут быть недоступны";
+                    if (StatusTextCtrl != null) StatusTextCtrl.Text = "JS runtime не найден — некоторые форматы могут быть пропущены";
                 });
             }
         }
@@ -506,8 +506,7 @@ private async Task StartDownloadLoop()
                             {
                                 string tempExtractPath = finalExePath + ".new";
                                 entry.ExtractToFile(tempExtractPath, true);
-                                if (File.Exists(finalExePath)) File.Delete(finalExePath);
-                                File.Move(tempExtractPath, finalExePath);
+                                ReplaceFileWithRetry(tempExtractPath, finalExePath);
                                 Log("I", "FFmpeg успешно извлечен.");
                             }
                             else throw new Exception("ffmpeg.exe не найден в архиве.");
@@ -531,8 +530,7 @@ private async Task StartDownloadLoop()
                     PreDeleteToolIfExists(finalExePath);
 
                 // Для yt-dlp просто переименовываем из .download в .exe
-                if (File.Exists(finalExePath)) File.Delete(finalExePath);
-                File.Move(downloadPath, finalExePath);
+                ReplaceFileWithRetry(downloadPath, finalExePath);
                 Log("I", $"{target.Name} успешно установлен.");
             }
         }
@@ -574,6 +572,7 @@ private void UpdateDownloadUI(string name, long current, long total, double spee
     }
 }
         // ================= ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =================
+
         private void ReplaceFileWithRetry(string sourcePath, string targetPath)
 {
     Exception? lastError = null;
@@ -595,8 +594,9 @@ private void UpdateDownloadUI(string name, long current, long total, double spee
         }
     }
 
-    throw lastError ?? new IOException($"Не удалось заменить файл: {Path.GetFileName(targetPath)}");
+    throw lastError ?? new IOException($"?? ??????? ???????? ????: {Path.GetFileName(targetPath)}");
 }
+
 
         private async Task CleanupFileAsync(string? filePath = null)
 {
@@ -792,16 +792,19 @@ private void Log(string level, string message, Exception? ex = null)
 
 
 
-        // ================= JS RUNTIME (QuickJS) =================
-        // --- ИЗМЕНЕНИЕ 4: Проверка JS Runtime (QuickJS) ---
+        // ================= JS RUNTIME (Node.js x86) =================
+        // --- ИЗМЕНЕНИЕ 4: Проверка JS Runtime (Node.js x86) ---
 private bool IsJsRuntimeAvailable()
 {
-    string qjsLocal = Path.Combine(AppDirectory, "qjs.exe");
-    string qjsBase = Path.Combine(AppContext.BaseDirectory, "qjs.exe");
+    // Проверяем наличие в нашей папке Bin
+    string nodeLocal = Path.Combine(AppDirectory, "node.exe");
+    // Также проверяем старый BaseDirectory на всякий случай (совместимость)
+    string nodeBase = Path.Combine(AppContext.BaseDirectory, "node.exe");
 
-    if (File.Exists(qjsLocal) || File.Exists(qjsBase)) return true;
+    if (File.Exists(nodeLocal) || File.Exists(nodeBase)) return true;
 
-    if (TryRunProcess("qjs", "--help", out _)) return true;
+    // PATH check...
+    if (TryRunProcess("node", "--version", out _)) return true;
 
     return false;
 }
@@ -846,26 +849,29 @@ private bool IsJsRuntimeAvailable()
                     return true;
                 }
 
-                var ask = "Для корректного извлечения форматов с YouTube требуется JavaScript runtime (QuickJS). Попробовать скачать qjs.exe и поместить рядом с приложением?";
+                // Предложим пользователю автозагрузку портативного Node.js x86
+                
+                var ask = "Для корректного извлечения форматов с YouTube требуется JavaScript runtime (Node.js x86). Попробовать скачать портативный Node.js x86 и поместить рядом с приложением?";
                 bool tryAuto = await ShowConfirmAsync("JS runtime не найден", ask);
-                Log("D", $"User response for auto-install QuickJS: {tryAuto}");
+                Log("D", $"User response for auto-install Node.js x86: {tryAuto}");
                 if (!tryAuto) {
-                    await Dispatcher.UIThread.InvokeAsync(()=> ShowErrorMessageBox("Инструкция по установке", "Если автоматическая установка не подходит, поместите qjs.exe рядом с приложением."));
+                    await Dispatcher.UIThread.InvokeAsync(()=> ShowErrorMessageBox("Инструкция по установке", "Если автоматическая установка не подходит, установите Node.js LTS с https://nodejs.org/ или Node.js x86 с https://nodejs.org/ и добавьте исполняемый файл в PATH или поместите рядом с приложением."));
                     return false;
                 }
 
-                Log("I", "Попытка автоматической загрузки QuickJS (qjs.exe)...");
-                bool installed = await TryInstallQuickJsPortableAsync(_cts?.Token ?? CancellationToken.None);
-                Log("D", $"TryInstallQuickJsPortableAsync result: {installed}");
+                // Пробуем автозагрузку, но логируем каждый шаг
+                Log("I", "Попытка автоматической загрузки Node.js x86 (portable)...");
+                bool installed = await TryInstallNodePortableAsync(_cts?.Token ?? CancellationToken.None);
+                Log("D", $"TryInstallNodePortableAsync result: {installed}");
 
                 if (installed)
                 {
-                    Log("I", "QuickJS успешно установлен рядом с приложением");
+                    Log("I", "Node.js x86 успешно установлен рядом с приложением");
                     return true;
                 }
                 else
                 {
-                    await Dispatcher.UIThread.InvokeAsync(()=> ShowErrorMessageBox("Установка не удалась", "Автоматическая загрузка qjs.exe не удалась. Поместите qjs.exe рядом с приложением и перезапустите программу."));
+                    await Dispatcher.UIThread.InvokeAsync(()=> ShowErrorMessageBox("Установка не удалась", "Автоматическая загрузка Node.js x86 не удалась. Если простое скачивание и помещение исполняемого файла рядом с приложением не помогает, установите Node.js (LTS) или Node.js x86 официальным установщиком и добавьте их в PATH. Для Node вы можете использовать `winget install OpenJS.NodeJS.LTS` или официальный инсталлятор с https://nodejs.org/. Для Node.js x86 см. https://nodejs.org/. После установки перезапустите приложение."));
                     return false;
                 }
             }
@@ -880,14 +886,14 @@ private bool IsJsRuntimeAvailable()
             }
         }
 
-        private async Task<bool> TryInstallQuickJsPortableAsync(CancellationToken token)
+        private async Task<bool> TryInstallNodePortableAsync(CancellationToken token)
         {
-            string quickJsUrl = "https://github.com/quickjs-ng/quickjs/releases/latest/download/qjs-windows-x86.exe";
-            string tempDownload = Path.Combine(AppDirectory, "qjs.exe.download");
-            string finalExe = Path.Combine(AppDirectory, "qjs.exe");
+            string nodeUrl = "https://nodejs.org/download/release/latest-v20.x/win-x86/node.exe";
+            string tempDownload = Path.Combine(AppDirectory, "node.exe.download");
+            string finalExe = Path.Combine(AppDirectory, "node.exe");
 
             _currentDownloadingName = Path.GetFileName(finalExe);
-            Log("I", $"Downloading QuickJS from {quickJsUrl}");
+            Log("I", $"Downloading Node.js x86 from {nodeUrl}");
             await Dispatcher.UIThread.InvokeAsync(() => {
                 if (HeaderTitleCtrl != null) HeaderTitleCtrl.Text = $"Установка {_currentDownloadingName}...";
                 if (StatusTextCtrl != null) StatusTextCtrl.Text = $"Установка {_currentDownloadingName}...";
@@ -900,11 +906,11 @@ private bool IsJsRuntimeAvailable()
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("MarsXZ Media-Setup");
 
-                using var resp = await client.GetAsync(quickJsUrl, HttpCompletionOption.ResponseHeadersRead, token);
+                using var resp = await client.GetAsync(nodeUrl, HttpCompletionOption.ResponseHeadersRead, token);
                 resp.EnsureSuccessStatusCode();
 
                 long total = resp.Content.Headers.ContentLength ?? -1;
-                Log("D", $"QuickJS download response OK. Content-Length={total}");
+                Log("D", $"Node.js download response OK. Content-Length={total}");
 
                 await using (var inStream = await resp.Content.ReadAsStreamAsync(token))
                 await using (var outFile = new FileStream(tempDownload, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -930,7 +936,7 @@ private bool IsJsRuntimeAvailable()
                             if (token.IsCancellationRequested) token.ThrowIfCancellationRequested();
                         }
 
-                        await outFile.WriteAsync(buffer, 0, read, token);
+                        await outFile.WriteAsync(buffer, 0, read);
                         downloaded += read;
 
                         double elapsedSec = sw.Elapsed.TotalSeconds > 0.001 ? sw.Elapsed.TotalSeconds : 0.001;
@@ -939,25 +945,25 @@ private bool IsJsRuntimeAvailable()
                         if ((DateTime.Now - lastLog).TotalSeconds >= 1)
                         {
                             lastLog = DateTime.Now;
-                            Log("D", $"QuickJS downloading: {downloaded} bytes{(total > 0 ? $" / {total}" : "")}");
+                            Log("D", $"Node.js downloading: {downloaded} bytes{(total > 0 ? $" / {total}" : "")}");
 
                             await Dispatcher.UIThread.InvokeAsync(() => {
-                                UpdateDownloadUI(_currentDownloadingName ?? "qjs.exe", downloaded, total, speedMb, elapsedSec);
+                                UpdateDownloadUI(_currentDownloadingName ?? "node.exe", downloaded, total, speedMb, elapsedSec);
                             });
                         }
                     }
                     sw.Stop();
-                    Log("I", $"QuickJS downloaded: {downloaded} bytes in {sw.Elapsed.TotalSeconds:F1}s");
+                    Log("I", $"Node.js downloaded: {downloaded} bytes in {sw.Elapsed.TotalSeconds:F1}s");
 
                     await Dispatcher.UIThread.InvokeAsync(() => {
-                        UpdateDownloadUI(_currentDownloadingName ?? "qjs.exe", downloaded, total, (downloaded / sw.Elapsed.TotalSeconds) / (1024.0 * 1024.0), sw.Elapsed.TotalSeconds);
+                        UpdateDownloadUI(_currentDownloadingName ?? "node.exe", downloaded, total, (downloaded / sw.Elapsed.TotalSeconds) / (1024.0 * 1024.0), sw.Elapsed.TotalSeconds);
                     });
                 }
 
                 if (File.Exists(finalExe)) File.Delete(finalExe);
                 File.Move(tempDownload, finalExe);
 
-                Log("I", "QuickJS installed.");
+                Log("I", "Node.js x86 installed.");
                 await Dispatcher.UIThread.InvokeAsync(() => { if (StatusTextCtrl != null) StatusTextCtrl.Text = $"{_currentDownloadingName} installed"; });
 
                 _currentDownloadingName = null;
@@ -965,7 +971,7 @@ private bool IsJsRuntimeAvailable()
             }
             catch (Exception ex)
             {
-                Log("E", "Failed to install QuickJS", ex);
+                Log("E", "Failed to install Node.js x86", ex);
                 try { if (File.Exists(tempDownload)) File.Delete(tempDownload); } catch { }
                 _currentDownloadingName = null;
                 return false;

@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+﻿﻿﻿using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Interactivity;
 using Avalonia.Input;
@@ -17,16 +17,21 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Threading;
 using System.Text;
+using Avalonia.Styling;
 
 namespace MarsXZMedia;
 
 public partial class MainWindow : Window
 {
+    // Новые глобальные настройки внешнего вида
+    public static string FontChoice { get; set; } = "Default";
+    public static string SoundTheme { get; set; } = "None"; // "None" или "System"
     private double _inlineLastPercent = 0;
     private string _inlineLastMessage = "";
     private bool _isDownloadingAudio = false;
     private CancellationTokenSource? _fetchCts = null;
     private bool _isAnalyzing = false;
+    private bool _isDownloading = false;
     private int _maxVideoHeight = 0;
     private string _lastDownloadedFile = "";
 
@@ -120,6 +125,7 @@ public static string MusicPath = AppPaths.DownloadsRoot;
     public MainWindow()
     {
         InitializeComponent();
+        SoundService.ApplyTheme(SoundTheme);
         SoundService.AttachClickSound(this);
         _downloadContent = MainContent.Content;
         InitSessionLog();
@@ -129,11 +135,12 @@ public static string MusicPath = AppPaths.DownloadsRoot;
         {
             try
             {
-                Log("E", "Критическая ошибка", e.ExceptionObject as Exception); // <-- Замени SaveTextLog
+                Log("E", "Критическая ошибка", e.ExceptionObject as Exception);
             }
             catch { }
         };
     }
+
 
     private string? _sessionLogPath;
 
@@ -448,7 +455,7 @@ private void OnUrlTextChanged(object? sender, TextChangedEventArgs e)
 
     if (isYoutube)
     {
-        FindButton.IsEnabled = true;
+        FindButton.IsEnabled = !_isAnalyzing && !_isDownloading;
         // Подсвечиваем рамку мягким зеленым цветом
         UrlBox.BorderBrush = Brush.Parse("#4CAF50"); 
     }
@@ -494,13 +501,19 @@ private void Log(string level, string message, Exception? ex = null)
             {
                 QualityOrBitrateLabel.Content = "Выберите битрейт:";
                 UpdateBitrateList(); // Заполняем битрейтами
-                DownloadButton.IsEnabled = _hasExtractableAudio && QualityOrBitrateList.SelectedIndex >= 0;
+                if (_isDownloading)
+                    DownloadButton.IsEnabled = false;
+                else
+                    DownloadButton.IsEnabled = _hasExtractableAudio && QualityOrBitrateList.SelectedIndex >= 0;
             }
             else
             {
                 QualityOrBitrateLabel.Content = "Выберите качество:";
                 UpdateVideoQualityList(); // Заполняем качествами видео
-                DownloadButton.IsEnabled = QualityOrBitrateList.SelectedIndex >= 0;
+                if (_isDownloading)
+                    DownloadButton.IsEnabled = false;
+                else
+                    DownloadButton.IsEnabled = QualityOrBitrateList.SelectedIndex >= 0;
             }
         }
         catch { }
@@ -672,6 +685,8 @@ public async Task UpdateInlineProgress(double percent, string message)
 
     private async void FetchInfo(object? sender, Avalonia.Interactivity.RoutedEventArgs? e) // переименовал аргумент, чтобы не путать с полем
 {
+    if (_isAnalyzing || _isDownloading) return;
+
     // 1. Проверяем наличие пути и текста
     if (string.IsNullOrWhiteSpace(UrlBox.Text)) return;
     
@@ -691,7 +706,13 @@ public async Task UpdateInlineProgress(double percent, string message)
     string? thumbUrl = null;
 
     // Блокируем кнопку на время анализа
-    FindButton.IsEnabled = false;
+    if (FindButton != null)
+    {
+        FindButton.IsEnabled = false;
+        FindButton.Content = "ПОИСК...";
+    }
+
+    await Task.Delay(10); // Даём интерфейсу время обновиться
 
     await Task.Run(async () =>
     {
@@ -877,7 +898,12 @@ public async Task UpdateInlineProgress(double percent, string message)
         {
             _isAnalyzing = false;
             Avalonia.Threading.Dispatcher.UIThread.Post(() => {
-                FindButton.IsEnabled = true;
+                if (FindButton != null)
+                {
+                    FindButton.Content = "ИСКАТЬ ВИДЕО";
+                    string u = UrlBox?.Text?.Trim() ?? "";
+                    FindButton.IsEnabled = !_isDownloading && (u.Contains("youtube.com") || u.Contains("youtu.be") || u.Contains("m.youtube.com"));
+                }
                 HideInlineNotification();
             });
         }
@@ -1517,12 +1543,21 @@ private void ShowDownloadCompleteToast(string filename, bool success, string mes
     // ================== ЗАГРУЗКА С ПРОГРЕССОМ ==================
  public async void Download(object? sender, RoutedEventArgs e)
 {
+    if (_isDownloading || _isAnalyzing) return;
+    _isDownloading = true;
+
     if (string.IsNullOrEmpty(UrlBox.Text)) return;
 
     // Сброс состояния прогресса
     _lastToastTime = DateTime.MinValue;
     _inlineLastPercent = 0;
     _inlineLastMessage = "";
+
+    // Блокируем интерфейс на время загрузки
+    if (DownloadButton != null) { DownloadButton.IsEnabled = false; DownloadButton.Content = "ЗАГРУЗКА..."; }
+    if (FindButton != null) FindButton.IsEnabled = false;
+
+    await Task.Delay(10); // Даём интерфейсу время обновиться
 
     bool isAudioMode = (DownloadTypeList?.SelectedIndex == 1);
     _isDownloadingAudio = isAudioMode;
@@ -1531,8 +1566,7 @@ private void ShowDownloadCompleteToast(string filename, bool success, string mes
     string targetPath = isAudioMode ? audioOutputPath : videoOutputPath;
     string fullOutputPath = targetPath;
 
-    string finalFileName = SanitizeFileName(VideoTitle.Text?.Trim() ?? "Video");
-
+    // ====================== СОЗДАНИЕ ПАПОК ======================
     try 
     {
         if (CreateSubfolders)
@@ -1551,61 +1585,86 @@ private void ShowDownloadCompleteToast(string filename, bool success, string mes
         return; 
     }
 
-     string audioId = "bestaudio";
-     string targetLang = "";
-     string audioNoteKey = "";
-     string audioSource = "audio";
+        // ====================== ПОДГОТОВКА ИМЕНИ ФАЙЛА ======================
+    string rawTitle = VideoTitle.Text?.Trim() ?? "Video";
+    string finalFileName = SanitizeFileName(rawTitle);
 
-     // 1. Получаем данные о выбранной дорожке
-     if (AudioList.IsVisible && AudioList.SelectedItem is ListBoxItem selectedItem)
-     {
-         string tagData = selectedItem.Tag?.ToString() ?? "";
-         var parts = tagData.Split(';');
-         if (parts.Length > 0) audioId = parts[0].Trim();
-         if (parts.Length > 1) targetLang = parts[1].Trim();
-         if (parts.Length > 2) audioNoteKey = parts[2].Trim();
-         if (parts.Length > 3) audioSource = parts[3].Trim();
-     }
+    string audioId = "bestaudio";
+    string targetLang = "";
+    string audioNoteKey = "";
+    string audioSource = "audio";
 
-     // 2. ПОДГОТОВКА ИМЕНИ ФАЙЛА (ПЕРЕВОД В НАЧАЛЕ)
-     string rawTitle = VideoTitle.Text?.Trim() ?? "Video";
+    AudioCandidate? selectedAudio = null;   // ← объявляем один раз здесь
 
-     // Если есть язык для перевода и он не "неопределен"
-     if (!string.IsNullOrWhiteSpace(targetLang) && targetLang != "und")
-     {
-         ShowInlineNotification("Перевод", isAudioMode ? "Перевожу имя выходного аудиофайла..." : "Перевожу имя выходного видеофайла...", 0);
-         string tl = targetLang.Split('-')[0].ToLowerInvariant();
+    // 1. Получаем данные о выбранной дорожке
+    if (AudioList.IsVisible && AudioList.SelectedItem is ListBoxItem selectedItem)
+    {
+        string tagData = selectedItem.Tag?.ToString() ?? "";
+        var parts = tagData.Split(';');
 
-         string translated = await TranslateTitleAsync(rawTitle, tl);
-         finalFileName = SanitizeFileName(translated);
-     }
+        if (parts.Length > 0) audioId = parts[0].Trim();
+        if (parts.Length > 1) targetLang = parts[1].Trim();
+        if (parts.Length > 2) audioNoteKey = parts[2].Trim();
+        if (parts.Length > 3) audioSource = parts[3].Trim();
 
-     // 3. НАСТРОЙКА YT-DLP
-     // Передаем полный путь через -o. %(ext)s позволит yt-dlp самому поставить .mp4 или .mp3
-     string outputOptions = $"-o \"{Path.Combine(fullOutputPath, finalFileName)}.%(ext)s\" --force-overwrites --no-part --no-cache-dir";
+        // Определяем, является ли выбранная дорожка оригинальной
+        bool isOriginalTrack = false;
 
-     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-     {
-         ShowDownloadStartToast(finalFileName);
-         UpdateDownloadProgressToast(0, "Подключение...", "Расчёт...", "0 / ? МБ");
-     });
+        selectedAudio = _audioCandidates.FirstOrDefault(a => a.Id == audioId);
 
-         AudioCandidate? selectedAudio = _audioCandidates.FirstOrDefault(a => a.Id == audioId);
-     if (selectedAudio != null && selectedAudio.IsAudioOnly)
-     {
-         string acSel = (selectedAudio.Acodec ?? "").ToLowerInvariant();
-         string exSel = (selectedAudio.Ext ?? "").ToLowerInvariant();
-         bool isOpus = acSel.Contains("opus") || exSel == "webm";
-         if (isOpus && !string.IsNullOrEmpty(selectedAudio.Lang))
-         {
-             var prefer = _audioCandidates
-                 .Where(a => a.IsAudioOnly && a.Lang.Equals(selectedAudio.Lang, StringComparison.OrdinalIgnoreCase))
-                 .Where(a => ((a.Acodec ?? "").ToLowerInvariant().StartsWith("mp4a") || (a.Acodec ?? "").ToLowerInvariant() == "aac" || (a.Ext ?? "").ToLowerInvariant() == "m4a"))
-                 .OrderByDescending(a => a.Abr)
-                 .FirstOrDefault();
-             if (prefer != null) audioId = prefer.Id;
-         }
-     }
+        if (selectedAudio != null)
+        {
+            isOriginalTrack = selectedAudio.IsOriginal ||
+                              audioNoteKey.Equals("original", StringComparison.OrdinalIgnoreCase) ||
+                              audioNoteKey.Equals("orig", StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            isOriginalTrack = audioNoteKey.Equals("original", StringComparison.OrdinalIgnoreCase) ||
+                              audioNoteKey.Equals("orig", StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Переводим название ТОЛЬКО если дорожка НЕ оригинальная
+        if (!isOriginalTrack && !string.IsNullOrWhiteSpace(targetLang) && targetLang != "und")
+        {
+            ShowInlineNotification("Перевод", 
+                isAudioMode ? "Перевожу имя аудиофайла..." : "Перевожу имя видеофайла...", 0);
+
+            string tl = targetLang.Split('-')[0].ToLowerInvariant();
+            string translated = await TranslateTitleAsync(rawTitle, tl);
+            finalFileName = SanitizeFileName(translated);  
+        }
+    }
+    // ====================== КОНЕЦ ПОДГОТОВКИ ======================
+
+    // 3. НАСТРОЙКА YT-DLP
+    string outputOptions = $"-o \"{Path.Combine(fullOutputPath, finalFileName)}.%(ext)s\" --force-overwrites --no-part --no-cache-dir";
+
+    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+    {
+        ShowDownloadStartToast(finalFileName);
+        UpdateDownloadProgressToast(0, "Подключение...", "Расчёт...", "0 / ? МБ");
+    });
+
+    // Продолжение старого кода (opus-проверка и т.д.)
+    if (selectedAudio != null && selectedAudio.IsAudioOnly)
+    {
+        string acSel = (selectedAudio.Acodec ?? "").ToLowerInvariant();
+        string exSel = (selectedAudio.Ext ?? "").ToLowerInvariant();
+        bool isOpus = acSel.Contains("opus") || exSel == "webm";
+        if (isOpus && !string.IsNullOrEmpty(selectedAudio.Lang))
+        {
+            var prefer = _audioCandidates
+                .Where(a => a.IsAudioOnly && a.Lang.Equals(selectedAudio.Lang, StringComparison.OrdinalIgnoreCase))
+                .Where(a => ((a.Acodec ?? "").ToLowerInvariant().StartsWith("mp4a") || 
+                             (a.Acodec ?? "").ToLowerInvariant() == "aac" || 
+                             (a.Ext ?? "").ToLowerInvariant() == "m4a"))
+                .OrderByDescending(a => a.Abr)
+                .FirstOrDefault();
+
+            if (prefer != null) audioId = prefer.Id;
+        }
+    }
 
 string langHeader = "";
     string formatArg = "";
@@ -2062,9 +2121,24 @@ string langHeader = "";
             }
             finally
             {
+                _isDownloading = false;
+
                 // Всегда сохраняем stderr буфер в объединённый лог для диагностики
                 try { SharedLogService.AppendTextSection("--- STDERR ---\n" + errSb.ToString(), "yt-dlp", "yt-dlp stderr"); } catch { }
 
+                // Разблокируем интерфейс после завершения или ошибки
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+                    if (DownloadButton != null)
+                    {
+                        DownloadButton.Content = "СКАЧАТЬ РЕСУРСЫ";
+                        ApplyDownloadTypeUI(); // Метод сам проверит списки и активирует кнопку скачивания, если нужно
+                    }
+                    if (FindButton != null && UrlBox != null)
+                    {
+                        string u = UrlBox.Text?.Trim() ?? "";
+                        FindButton.IsEnabled = !_isAnalyzing && (u.Contains("youtube.com") || u.Contains("youtu.be") || u.Contains("m.youtube.com"));
+                    }
+                });
             }
         });
     }
@@ -2175,8 +2249,8 @@ string langHeader = "";
             string ytDlpFullPath = Path.Combine(AppDirectory, "yt-dlp.exe");
             string jsArg = GetPreferredJsRuntimeArg();
             string audioArgs = string.IsNullOrWhiteSpace(jsArg)
-                ? $"-f \"bestaudio\" -o \"{Path.Combine(dir, baseName + ".bestaudio.%(ext)s")}\" --no-part --no-cache-dir \"{url}\""
-                : $"{jsArg} -f \"bestaudio\" -o \"{Path.Combine(dir, baseName + ".bestaudio.%(ext)s")}\" --no-part --no-cache-dir \"{url}\"";
+                ? $"--cookies-from-browser edge -f \"bestaudio\" -o \"{Path.Combine(dir, baseName + ".bestaudio.%(ext)s")}\" --no-part --no-cache-dir \"{url}\""
+                : $"{jsArg} --cookies-from-browser edge -f \"bestaudio\" -o \"{Path.Combine(dir, baseName + ".bestaudio.%(ext)s")}\" --no-part --no-cache-dir \"{url}\"";
             var psiAudio = new ProcessStartInfo
             {
                 FileName = Path.Combine(AppDirectory, "yt-dlp.exe"),
@@ -2363,12 +2437,16 @@ string langHeader = "";
     {
         try
         {
-            string qjsLocal = Path.Combine(AppDirectory, "qjs.exe");
+            string nodeLocal = Path.Combine(AppDirectory, "node.exe");
+            string denoLocal = Path.Combine(AppDirectory, "deno.exe");
 
-            if (File.Exists(qjsLocal))
-                return $"--js-runtimes \"quickjs:{NormalizeJsRuntimePath(qjsLocal)}\"";
+            if (File.Exists(nodeLocal))
+                return $"--js-runtimes \"node:{NormalizeJsRuntimePath(nodeLocal)}\"";
+            if (File.Exists(denoLocal))
+                return $"--js-runtimes \"deno:{NormalizeJsRuntimePath(denoLocal)}\"";
 
-            if (TryRunProcessCheck("qjs", "--help")) return "--js-runtimes quickjs";
+            if (TryRunProcessCheck("node", "--version")) return "--js-runtimes node";
+            if (TryRunProcessCheck("deno", "--version")) return "--js-runtimes deno";
         }
         catch { }
         return "";
@@ -2447,21 +2525,3 @@ string langHeader = "";
     catch { }
 }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

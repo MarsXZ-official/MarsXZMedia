@@ -3,65 +3,97 @@
         x:Class="MarsXZMedia.AboutWindow"
         Title="О программе"
         Width="560"
-        Height="520"
+        Height="540"
         WindowStartupLocation="CenterOwner"
         Background="White">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20" Spacing="10">
-            <TextBlock Text="MarsXZ Media v1.1.0"
-                       FontFamily="{StaticResource McFont}"
+        <StackPanel Margin="20" Spacing="0">
+            
+            <TextBlock Text="MarsXZ Media v1.2.0"
+                       FontFamily="{DynamicResource AppFontBold}"
                        FontSize="22"
                        FontWeight="Bold"
-                       HorizontalAlignment="Center"/>
+                       Foreground="#000000"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,24"/>
 
-            <TextBlock Text="MarsXZ Media — настольный инструмент для загрузки видео и аудио с YouTube."
-                       TextWrapping="Wrap"/>
-            <TextBlock Text="Загрузка выполняется с использованием yt-dlp."
-                       TextWrapping="Wrap"/>
-            <TextBlock Text="Обработка, объединение и конвертация файлов выполняются через ffmpeg."
-                       TextWrapping="Wrap"/>
-            <TextBlock Text="node используется для корректной работы внутренних компонентов."
-                       TextWrapping="Wrap"/>
+            <TextBlock Text="MarsXZ Media — настольный инструмент для эффективной загрузки видео и аудио с YouTube."
+                       FontSize="16"
+                       Foreground="#333333"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,12"/>
 
-            <Separator/>
+            <TextBlock Text="• Загрузка выполняется с использованием мощного движка yt-dlp."
+                       Foreground="#333333"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock Text="• Обработка, объединение и конвертация файлов выполняются через FFmpeg."
+                       Foreground="#333333"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock Text="• Node.js используется для корректной работы внутренних компонентов."
+                       Foreground="#333333"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,16"/>
+
+            <Separator Background="#CCCCCC" Height="1" Margin="0,0,0,16"/>
 
             <TextBlock Text="Сообщить об ошибке"
-                       FontFamily="{StaticResource McFont}"
+                       FontFamily="{DynamicResource AppFontBold}"
                        FontSize="18"
-                       FontWeight="Bold"/>
+                       FontWeight="Bold"
+                       Foreground="#111111"
+                       Margin="0,0,0,8"/>
+
             <TextBlock Text="Если вы обнаружили ошибку или недочёт в работе MarsXZ Media, напишите:"
-                       TextWrapping="Wrap"/>
+                       Foreground="#333333"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,12"/>
+
             <Border BorderBrush="#1a73e8"
                     BorderThickness="1"
                     CornerRadius="4"
-                    Padding="4,2"
+                    Padding="8,4"
                     Background="Transparent"
-                    HorizontalAlignment="Left">
+                    HorizontalAlignment="Left"
+                    Margin="0,0,0,16">
+                
                 <TextBlock x:Name="SupportEmailLink"
                            Text="marsxz8656@gmail.com"
                            Foreground="#1a73e8"
-                           TextDecorations="Underline"
+                           FontSize="14"
                            Cursor="Hand"
                            FontWeight="SemiBold"
                            PointerPressed="OpenSupportEmail"/>
             </Border>
+
             <TextBlock x:Name="EmailStatus"
                        Text=""
                        Foreground="#666666"
                        FontSize="12"
                        IsVisible="False"
-                       TextWrapping="Wrap"/>
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,16"/>
 
-            <Separator/>
+            <Separator Background="#CCCCCC" Height="1" Margin="0,0,0,16"/>
 
             <TextBlock Text="© MarsXZ, 2026. Все права защищены."
-                       TextWrapping="Wrap"/>
-            <TextBlock Text="Сторонние компоненты используются по лицензии их авторов."
-                       TextWrapping="Wrap"/>
+                       Foreground="#666666"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,4"/>
+
+            <TextBlock Text="Проект использует компоненты с открытым исходным кодом."
+                       Foreground="#666666"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,16"/>
 
             <Button Content="Закрыть"
-                    FontFamily="{StaticResource McFont}"
+                    FontFamily="{DynamicResource AppFont}"
                     Width="140"
                     HorizontalAlignment="Center"
                     Margin="0,10,0,0"
@@ -69,6 +101,3 @@
         </StackPanel>
     </ScrollViewer>
 </Window>
-
-
-
