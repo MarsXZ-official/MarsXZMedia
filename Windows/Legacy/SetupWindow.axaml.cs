@@ -55,7 +55,7 @@ public static string LogsFolder => AppPaths.LogsDirectory;
 // Теперь качаем в BinFolder
 private readonly List<(string Name, string Url, string Path)> _filesToDownload = new()
 {
-    ("yt-dlp.exe", "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_x86.exe",
+    ("yt-dlp.exe", YtDlpUpdateHelper.DefaultDownloadUrl,
         Path.Combine(AppDirectory, "yt-dlp.exe")),
 
     ("ffmpeg.exe", "https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.2.1/ffmpeg-4.2.1-win-32.zip",
@@ -730,7 +730,7 @@ private void DeleteWithRetry(string path)
             }
 
             Log("I", updateCheck.Message);
-            _pendingYtDlpUpdateTarget = ("yt-dlp.exe", string.IsNullOrWhiteSpace(updateCheck.DownloadUrl) ? YtDlpUpdateHelper.DefaultX86DownloadUrl : updateCheck.DownloadUrl, ytDlpPath);
+            _pendingYtDlpUpdateTarget = ("yt-dlp.exe", string.IsNullOrWhiteSpace(updateCheck.DownloadUrl) ? YtDlpUpdateHelper.DefaultDownloadUrl : updateCheck.DownloadUrl, ytDlpPath);
             return _pendingYtDlpUpdateTarget;
         }
 

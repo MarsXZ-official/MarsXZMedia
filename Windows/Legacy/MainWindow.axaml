@@ -14,7 +14,7 @@
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="3"/>
-            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -32,18 +32,15 @@
             <Setter Property="BorderBrush" Value="#3D2B1F"/>
         </Style>
         <Style Selector="Button.mc-btn.mc-btn-stone">
-            <Setter Property="Background" Value="#6D6D6D"/>
-            <Setter Property="BorderBrush" Value="#2F2F2F"/>
+            <Setter Property="Background" Value="#E0E0E0"/>
+            <Setter Property="BorderBrush" Value="#BDBDBD"/>
+            <Setter Property="Foreground" Value="#111111"/>
         </Style>
 
         <Style Selector="Button.mc-btn.mc-btn-youtube">
-            <Setter Property="Background" Value="#CC0000"/>
-            <Setter Property="BorderBrush">
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF5A4F" Offset="0"/>
-                    <GradientStop Color="#8B0000" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter>
+            <Setter Property="Background" Value="#E60000"/>
+            <Setter Property="BorderBrush" Value="#800000"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
         </Style>
         <Style Selector="Button.mc-btn.mc-btn-gray:pointerover">
             <Setter Property="Background" Value="#8A8A8A"/>
@@ -71,13 +68,17 @@
         </Style>
 
         <Style Selector="Button.mc-btn.mc-btn-youtube:pointerover">
-            <Setter Property="Background" Value="#E60000"/>
-            <Setter Property="BorderBrush">
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FF7A70" Offset="0"/>
-                    <GradientStop Color="#A00000" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter>
+            <Setter Property="Background" Value="#CC0000"/>
+            <Setter Property="BorderBrush" Value="#700000"/>
+        </Style>
+        <Style Selector="Button.mc-btn.mc-btn-youtube:pressed">
+            <Setter Property="Background" Value="#A80000"/>
+            <Setter Property="BorderBrush" Value="#5C0000"/>
+        </Style>
+        <Style Selector="Button.mc-btn.mc-btn-youtube:disabled">
+            <Setter Property="Background" Value="#808080"/>
+            <Setter Property="BorderBrush" Value="#555555"/>
+            <Setter Property="Foreground" Value="#D0D0D0"/>
         </Style>
     </Window.Styles>
 
@@ -93,8 +94,17 @@
                 <ContentControl x:Name="MainContent">
                     <StackPanel Margin="15" Spacing="10">
                         <Grid ColumnDefinitions="*, Auto">
-                            <TextBox x:Name="UrlBox" Watermark="Вставьте ссылку..." MinHeight="52" CornerRadius="0" BorderBrush="#555555" BorderThickness="2" VerticalContentAlignment="Center" TextChanged="OnUrlTextChanged"/>
-                            <Button Grid.Column="1" Content="ВСТАВИТЬ" Click="OnPasteClick" Classes="mc-btn mc-btn-stone" FontSize="16" MinWidth="130" MinHeight="52" Margin="10,0,0,0"/>
+                            <TextBox x:Name="UrlBox" Watermark="Вставьте ссылку..." MinHeight="52" CornerRadius="12" BorderBrush="#BDBDBD" BorderThickness="2" VerticalContentAlignment="Center" TextChanged="OnUrlTextChanged">
+                                <TextBox.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuItem Header="Вырезать" Click="UrlBox_Cut_Click"/>
+                                        <MenuItem Header="Копировать" Click="UrlBox_Copy_Click"/>
+                                        <MenuItem Header="Вставить" Click="UrlBox_Paste_Click"/>
+                                        <MenuItem Header="Выделить всё" Click="UrlBox_SelectAll_Click"/>
+                                    </MenuFlyout>
+                                </TextBox.ContextFlyout>
+                            </TextBox>
+                            <Button x:Name="PasteButton" Grid.Column="1" Content="ВСТАВИТЬ" Click="OnPasteClick" Classes="mc-btn mc-btn-stone" FontSize="16" MinWidth="130" MinHeight="52" Margin="10,0,0,0"/>
                         </Grid>
                                                                         <Button x:Name="FindButton"
                                 Content="ИСКАТЬ ВИДЕО"
@@ -110,13 +120,29 @@
                         <StackPanel x:Name="InfoPanel" IsVisible="False" Spacing="16">
                             <Grid ColumnDefinitions="240, *" RowDefinitions="Auto">
                                 <Border Grid.Column="0" CornerRadius="12" ClipToBounds="True" Height="135" Background="Black" BoxShadow="0 2 8 0 #20000000">
-                                    <Image x:Name="PreviewImage" Stretch="UniformToFill"/>
+                                    <Grid>
+                                        <!-- Картинка превью -->
+                                        <Image x:Name="PreviewImage" Stretch="UniformToFill"/>
+                                        
+                                        <!-- Плашка со временем как на YouTube -->
+                                        <Border x:Name="DurationBorder" 
+                                                Background="#CC000000" 
+                                                CornerRadius="4" 
+                                                Padding="6,2" 
+                                                HorizontalAlignment="Right" 
+                                                VerticalAlignment="Bottom" 
+                                                Margin="8">
+                                            <TextBlock x:Name="VideoDuration" 
+                                                       Foreground="White" 
+                                                       FontSize="12" 
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                    </Grid>
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="20,0,0,0" Spacing="5" VerticalAlignment="Center">
                                     <TextBlock x:Name="VideoTitle" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" MaxLines="3"/>
                                     <TextBlock x:Name="VideoDescription1" FontSize="15" Foreground="#555555" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxLines="3"/>
                                     <TextBlock x:Name="VideoAuthor" FontSize="15" FontWeight="SemiBold" Foreground="#444444"/>
-                                    <TextBlock x:Name="VideoDuration" FontSize="14" Foreground="Gray"/>
                                 </StackPanel>
                             </Grid>
 

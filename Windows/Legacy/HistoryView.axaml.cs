@@ -23,6 +23,35 @@ public partial class HistoryView : UserControl
         BuildView();
     }
 
+    public void ApplyVisualMode()
+    {
+        var radius = MainWindow.SquareInterface ? 0 : 22;
+        foreach (var control in GroupsPanel.Children)
+        {
+            ApplyRadius(control, radius);
+        }
+    }
+
+    private static void ApplyRadius(Control control, double radius)
+    {
+        if (control is Border border)
+        {
+            border.CornerRadius = new CornerRadius(radius);
+            if (border.Child != null)
+                ApplyRadius(border.Child, 0);
+            return;
+        }
+
+        if (control is Button button)
+            button.CornerRadius = new CornerRadius(radius);
+
+        if (control is Panel panel)
+        {
+            foreach (var child in panel.Children)
+                ApplyRadius(child, radius);
+        }
+    }
+
     private void BuildView()
     {
         GroupsPanel.Children.Clear();
@@ -60,7 +89,7 @@ public partial class HistoryView : UserControl
                 var items = group.OrderByDescending(x => x.Timestamp).ToList();
                 if (items.Count == 1)
                 {
-                    GroupsPanel.Children.Add(CreateEntryButton(items[0], indicator: "", compact: false));
+                    GroupsPanel.Children.Add(CreateEntryBlock(items[0]));
                 }
                 else
                 {
@@ -68,6 +97,8 @@ public partial class HistoryView : UserControl
                 }
             }
         }
+
+        ApplyVisualMode();
     }
 
     private Control CreateGroupPanel(System.Collections.Generic.List<HistoryEntry> items)
@@ -114,7 +145,11 @@ public partial class HistoryView : UserControl
             Content = header,
             HorizontalContentAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(10),
-            Tag = latest
+            Tag = latest,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            Foreground = new SolidColorBrush(Color.Parse("#111111"))
         };
 
         var childrenPanel = new StackPanel
@@ -135,10 +170,19 @@ public partial class HistoryView : UserControl
             indicatorText.Text = childrenPanel.IsVisible ? "˅" : "^";
         };
 
-        var groupPanel = new StackPanel { Spacing = 4 };
-        groupPanel.Children.Add(headerButton);
-        groupPanel.Children.Add(childrenPanel);
-        return groupPanel;
+        var groupContent = new StackPanel { Spacing = 0 };
+        groupContent.Children.Add(headerButton);
+        groupContent.Children.Add(childrenPanel);
+
+        return new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Background = Brushes.White,
+            BorderBrush = new SolidColorBrush(Color.Parse("#3A3A3A")),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(MainWindow.SquareInterface ? 0 : 22),
+            Child = groupContent
+        };
     }
 
     private Button CreateEntryButton(HistoryEntry entry, string indicator, bool compact)
@@ -184,11 +228,28 @@ public partial class HistoryView : UserControl
             Content = header,
             HorizontalContentAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(10),
-            Tag = entry
+            Tag = entry,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            Foreground = new SolidColorBrush(Color.Parse("#111111"))
         };
 
         button.Click += (_, _) => EntrySelected?.Invoke(entry);
         return button;
+    }
+
+    private Border CreateEntryBlock(HistoryEntry entry)
+    {
+        return new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Background = Brushes.White,
+            BorderBrush = Brushes.Black,
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(0),
+            Child = CreateEntryButton(entry, indicator: "", compact: false)
+        };
     }
 
     private string FormatSectionTitle(DateTime date)

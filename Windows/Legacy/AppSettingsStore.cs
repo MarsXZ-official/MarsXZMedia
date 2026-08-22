@@ -17,6 +17,7 @@ public sealed class AppSettings
     public int LogAutoDeleteMaxDays { get; set; } = 30;
     public string LastCustomVideoPath { get; set; } = "";
     public string LastCustomMusicPath { get; set; } = "";
+    public bool SquareInterface { get; set; } = false;
     // Новые поля для внешнего вида
     public string FontChoice { get; set; } = "Default"; // "Default" или "MonoCraft"
     public string SoundTheme { get; set; } = "None"; // "None" или "Minecraft"
@@ -129,6 +130,7 @@ public static class AppSettingsStore
         // Применение внешнего вида
         MainWindow.FontChoice = s.FontChoice;
         MainWindow.SoundTheme = s.SoundTheme;
+        MainWindow.SquareInterface = s.SquareInterface;
         SoundService.ApplyTheme(s.SoundTheme);
     }
 
@@ -147,6 +149,7 @@ public static class AppSettingsStore
             LogAutoDeleteMaxDays = MainWindow.LogAutoDeleteMaxDays,
             LastCustomVideoPath = MainWindow.LastCustomVideoPath,
             LastCustomMusicPath = MainWindow.LastCustomMusicPath,
+            SquareInterface = MainWindow.SquareInterface,
             FontChoice = MainWindow.FontChoice,
             SoundTheme = MainWindow.SoundTheme
         };

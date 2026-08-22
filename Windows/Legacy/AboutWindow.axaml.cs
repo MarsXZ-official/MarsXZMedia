@@ -1,4 +1,5 @@
-﻿using Avalonia.Controls;
+﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -12,17 +13,36 @@ namespace MarsXZMedia;
 
 public partial class AboutWindow : Window
 {
-    private const string SupportEmail = "marsxz8656@gmail.com";
+    private const string SupportEmail = "marsmanecraft@gmail.com";
 
     public AboutWindow()
     {
         InitializeComponent();
         SoundService.AttachClickSound(this);
+        ApplyVisualMode();
+    }
+
+    private void ApplyVisualMode()
+    {
+        var radius = MainWindow.SquareInterface ? 0 : 12;
+        YoutubeButton.CornerRadius = new CornerRadius(radius);
+        GithubButton.CornerRadius = new CornerRadius(radius);
+        CloseButton.CornerRadius = new CornerRadius(radius);
     }
 
     private void Close_Click(object? sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void OpenYoutube(object? sender, RoutedEventArgs e)
+    {
+        TryOpenBrowser("https://m.youtube.com/@MarsXZ");
+    }
+
+    private void OpenGithub(object? sender, RoutedEventArgs e)
+    {
+        TryOpenBrowser("https://github.com/MarsXZ-Official/MarsXZMedia");
     }
 
     private async void OpenSupportEmail(object? sender, PointerPressedEventArgs e)

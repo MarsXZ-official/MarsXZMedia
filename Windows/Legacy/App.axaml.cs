@@ -56,9 +56,17 @@ public partial class App : Application
             {
                 try
                 {
-                    var updateCheck = YtDlpUpdateHelper.CheckAsync(Path.Combine(appDir, "yt-dlp.exe"), CancellationToken.None)
+                    string ytDlpPath = Path.Combine(appDir, "yt-dlp.exe");
+                    if (!YtDlpUpdateHelper.TryGetLocalVersion(ytDlpPath, out _))
+                    {
+                        ytDlpNeedsUpdate = true;
+                    }
+                    else
+                    {
+                        var updateCheck = YtDlpUpdateHelper.CheckAsync(ytDlpPath, CancellationToken.None)
                         .GetAwaiter().GetResult();
-                    ytDlpNeedsUpdate = updateCheck.IsOutdated;
+                        ytDlpNeedsUpdate = updateCheck.IsOutdated;
+                    }
                 }
                 catch
                 {
