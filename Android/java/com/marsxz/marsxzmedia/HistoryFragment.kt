@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import com.marsxz.marsxzmedia.R
@@ -69,11 +70,20 @@ class HistoryFragment : Fragment() {
 
             byUrl.forEach { (_, itemsRaw) ->
                 val items = itemsRaw.sortedByDescending { it.timestamp }
-                if (items.size == 1) {
-                    container.addView(createEntryButton(items[0], compact = false))
-                } else {
-                    container.addView(createGroupPanel(items))
+                val wrapper = LinearLayout(requireContext()).apply {
+                    orientation = LinearLayout.VERTICAL
+                    background = ContextCompat.getDrawable(context, R.drawable.history_item_bg)
+                    val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                    lp.setMargins(0, dp(4), 0, dp(4))
+                    layoutParams = lp
                 }
+
+                if (items.size == 1) {
+                    wrapper.addView(createEntryButton(items[0], compact = false))
+                } else {
+                    wrapper.addView(createGroupPanel(items))
+                }
+                container.addView(wrapper)
             }
         }
     }
@@ -83,7 +93,7 @@ class HistoryFragment : Fragment() {
             text = textValue
             textSize = 18f
             setTypeface(typeface, Typeface.BOLD)
-            setTextColor(Color.BLACK)
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
             setPadding(dp(4), dp(12), dp(4), dp(8))
         }
     }
@@ -99,10 +109,11 @@ class HistoryFragment : Fragment() {
             isAllCaps = false
             gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
             text = buildEntryText(latest.title, latest.timestamp, "▸ ")
-            setTextColor(Color.BLACK)
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
             setPadding(dp(12), dp(10), dp(12), dp(10))
             ellipsize = TextUtils.TruncateAt.END
             maxLines = 2
+            background = null
         }
 
         val childrenContainer = LinearLayout(requireContext()).apply {
@@ -168,11 +179,12 @@ class HistoryFragment : Fragment() {
             isAllCaps = false
             gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
             text = buildEntryText(entry.title, entry.timestamp)
-            setTextColor(Color.BLACK)
+            setTextColor(ContextCompat.getColor(context, R.color.text_primary))
             textSize = if (compact) 14f else 16f
             setPadding(dp(12), dp(10), dp(12), dp(10))
             ellipsize = TextUtils.TruncateAt.END
             maxLines = 2
+            background = null
 
             setOnClickListener {
                 onEntrySelected?.invoke(entry)

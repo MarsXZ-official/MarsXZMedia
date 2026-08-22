@@ -14,10 +14,13 @@ import android.provider.DocumentsContract
 import android.provider.Settings
 import android.view.View
 import android.widget.*
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import java.io.File
 import java.io.FileInputStream
@@ -35,6 +38,7 @@ class SettingsActivity : AppCompatActivity() {
     private data class SettingsSnapshot(
         val fontType: String,
         val soundTheme: String,
+        val minecraftUI: Boolean,
         val useDefaultPath: Boolean,
         val separatePaths: Boolean,
         val noSubfolders: Boolean,
@@ -48,11 +52,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var prefs: SharedPreferences
     private var isUpdatingUI = false
+    private var currentAppliedFont: String? = null
+    private var currentAppliedSquare: Boolean = false
 
     private lateinit var backButton: ImageButton
 
     private lateinit var cbFontMonoCraft: CheckBox
     private lateinit var cbSoundsMinecraft: CheckBox
+    private lateinit var cbMinecraftUI: CheckBox
 
     private lateinit var tvVideoPathLabel: TextView
     private lateinit var etVideoPath: EditText
@@ -70,6 +77,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var cbDisableLogs: CheckBox
     private lateinit var etMaxDays: EditText
     private lateinit var cbInfiniteLogs: CheckBox
+    private lateinit var tvLogInfo: TextView
     private lateinit var tvErrorInfo: TextView
 
     private var pendingExportLogFile: File? = null
@@ -136,18 +144,39 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         val fontType = prefs.getString("font_type", "system")
-        if (fontType == "monocraft") {
-            setTheme(R.style.Theme_MarsXZMedia_Monocraft)
-        } else {
-            setTheme(R.style.Theme_MarsXZMedia)
+        val isSquare = prefs.getBoolean("minecraft_ui", false)
+        
+        currentAppliedFont = fontType
+        currentAppliedSquare = isSquare
+
+        when {
+            isSquare && fontType == "monocraft" -> setTheme(R.style.Theme_MarsXZMedia_Square_Monocraft)
+            isSquare -> setTheme(R.style.Theme_MarsXZMedia_Square)
+            fontType == "monocraft" -> setTheme(R.style.Theme_MarsXZMedia_Monocraft)
+            else -> setTheme(R.style.Theme_MarsXZMedia)
         }
 
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
+        // Force system bar icons color based on theme
+        val isNightMode = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
         WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = true
-            isAppearanceLightNavigationBars = true
+            isAppearanceLightStatusBars = !isNightMode
+            isAppearanceLightNavigationBars = !isNightMode
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.topBar)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(v.paddingLeft, bars.top, v.paddingRight, v.paddingBottom)
+            insets
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.settingsScroll)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, bars.bottom)
+            insets
         }
 
         UiSoundPlayer.init(this)
@@ -204,6 +233,7 @@ class SettingsActivity : AppCompatActivity() {
 
         cbFontMonoCraft = findViewById(R.id.cbFontMonoCraft)
         cbSoundsMinecraft = findViewById(R.id.cbSoundsMinecraft)
+        cbMinecraftUI = findViewById(R.id.cbMinecraftUI)
 
         tvVideoPathLabel = findViewById(R.id.tvVideoPathLabel)
         etVideoPath = findViewById(R.id.tvVideoPath)
@@ -221,6 +251,7 @@ class SettingsActivity : AppCompatActivity() {
         cbDisableLogs = findViewById(R.id.cbDisableLogs)
         etMaxDays = findViewById(R.id.etMaxDays)
         cbInfiniteLogs = findViewById(R.id.cbInfiniteLogs)
+        tvLogInfo = findViewById(R.id.tvLogInfo)
         tvErrorInfo = findViewById(R.id.tvErrorInfo)
     }
 
@@ -249,14 +280,12 @@ class SettingsActivity : AppCompatActivity() {
         isUpdatingUI = true
 
         val fontType = prefs.getString("font_type", "system")
-        val isMonoCraft = fontType == "monocraft"
-        cbFontMonoCraft.isChecked = isMonoCraft
-        cbFontMonoCraft.text = if (isMonoCraft) "Выключить шрифт MonoCraft" else "Включить шрифт MonoCraft"
+        cbFontMonoCraft.isChecked = fontType == "monocraft"
 
         val soundTheme = prefs.getString("sound_theme", "system")
-        val isMinecraft = soundTheme == "minecraft"
-        cbSoundsMinecraft.isChecked = isMinecraft
-        cbSoundsMinecraft.text = if (isMinecraft) "Выключить звук Minecraft" else "Включить звук Minecraft"
+        cbSoundsMinecraft.isChecked = soundTheme == "minecraft"
+
+        cbMinecraftUI.isChecked = prefs.getBoolean("minecraft_ui", false)
 
         cbUseDefaultPath.isChecked = prefs.getBoolean("use_default_path", true)
         cbSeparatePaths.isChecked = prefs.getBoolean("separate_paths", false)
@@ -278,10 +307,12 @@ class SettingsActivity : AppCompatActivity() {
 
         val currentFont = if (cbFontMonoCraft.isChecked) "monocraft" else "system"
         val currentSounds = if (cbSoundsMinecraft.isChecked) "minecraft" else "system"
+        val currentSquare = cbMinecraftUI.isChecked
         val currentDays = etMaxDays.text.toString().toIntOrNull() ?: 365
 
         return currentFont != snapshot.fontType ||
                 currentSounds != snapshot.soundTheme ||
+                currentSquare != snapshot.minecraftUI ||
                 cbUseDefaultPath.isChecked != snapshot.useDefaultPath ||
                 cbSeparatePaths.isChecked != snapshot.separatePaths ||
                 cbNoSubfolders.isChecked != snapshot.noSubfolders ||
@@ -300,6 +331,16 @@ class SettingsActivity : AppCompatActivity() {
             finish()
         }
 
+        cbMinecraftUI.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingUI) return@setOnCheckedChangeListener
+            UiSoundPlayer.playClick(this)
+            prefs.edit()
+                .putBoolean("minecraft_ui", isChecked)
+                .putBoolean("pending_settings_notification", true)
+                .commit()
+            recreate()
+        }
+
         // Мгновенное применение шрифта с перезагрузкой, но БЕЗ уведомления
         cbFontMonoCraft.setOnCheckedChangeListener { _, isChecked ->
             if (isUpdatingUI) return@setOnCheckedChangeListener
@@ -307,8 +348,6 @@ class SettingsActivity : AppCompatActivity() {
 
             val newFontType = if (isChecked) "monocraft" else "system"
             val currentFont = prefs.getString("font_type", "system")
-
-            cbFontMonoCraft.text = if (isChecked) "Выключить шрифт MonoCraft" else "Включить шрифт MonoCraft"
 
             if (newFontType != currentFont) {
                 // Ставим специальный флаг, чтобы вспомнить об изменении при выходе
@@ -327,8 +366,6 @@ class SettingsActivity : AppCompatActivity() {
 
             val newTheme = if (isChecked) "minecraft" else "system"
             val currentTheme = prefs.getString("sound_theme", "system")
-
-            cbSoundsMinecraft.text = if (isChecked) "Выключить звук Minecraft" else "Включить звук Minecraft"
 
             if (newTheme != currentTheme) {
                 // Ставим специальный флаг
@@ -428,6 +465,7 @@ class SettingsActivity : AppCompatActivity() {
 
             editor.putString("font_type", if (cbFontMonoCraft.isChecked) "monocraft" else "system")
             editor.putString("sound_theme", if (cbSoundsMinecraft.isChecked) "minecraft" else "system")
+            editor.putBoolean("minecraft_ui", cbMinecraftUI.isChecked)
             editor.putBoolean("use_default_path", cbUseDefaultPath.isChecked)
             editor.putBoolean("separate_paths", cbSeparatePaths.isChecked)
             editor.putBoolean("no_subfolders", cbNoSubfolders.isChecked)
@@ -530,13 +568,17 @@ class SettingsActivity : AppCompatActivity() {
             tvErrorInfo.visibility = View.VISIBLE
             tvErrorInfo.text = "Логи отключены."
             tvErrorInfo.setTextColor(android.graphics.Color.GRAY)
+            tvLogInfo.visibility = View.GONE
         } else {
             cbInfiniteLogs.isEnabled = true
             etMaxDays.isEnabled = !cbInfiniteLogs.isChecked
-            tvErrorInfo.visibility = if (cbInfiniteLogs.isChecked) View.VISIBLE else View.GONE
-            if (cbInfiniteLogs.isChecked) {
-                tvErrorInfo.text = "Авто-удаление отключено."
-                tvErrorInfo.setTextColor(android.graphics.Color.GRAY)
+            
+            // Показываем подсказку о вечном хранилище только если включено безгранично
+            tvLogInfo.visibility = if (cbInfiniteLogs.isChecked) View.VISIBLE else View.GONE
+            
+            // Убираем дубликат текста из tvErrorInfo
+            if (tvErrorInfo.text == "Авто-удаление отключено." || tvErrorInfo.text == "Логи отключены.") {
+                tvErrorInfo.visibility = View.GONE
             }
         }
     }
@@ -545,6 +587,7 @@ class SettingsActivity : AppCompatActivity() {
         return SettingsSnapshot(
             fontType = prefs.getString("font_type", "system") ?: "system",
             soundTheme = prefs.getString("sound_theme", "system") ?: "system",
+            minecraftUI = cbMinecraftUI.isChecked,
             useDefaultPath = cbUseDefaultPath.isChecked,
             separatePaths = cbSeparatePaths.isChecked,
             noSubfolders = cbNoSubfolders.isChecked,

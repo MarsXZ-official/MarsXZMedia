@@ -2,6 +2,7 @@ package com.marsxz.marsxzmedia
 
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.VideoStream
@@ -20,7 +21,8 @@ object YoutubeFormatsService {
 
     private fun ensureInitialized() {
         if (!initialized) {
-            NewPipe.init(DownloaderImpl())
+            // Инициализация с русской локализацией для правильного парсинга
+            NewPipe.init(DownloaderImpl(), Localization("ru", "RU"))
             initialized = true
         }
     }
@@ -29,37 +31,56 @@ object YoutubeFormatsService {
         return try {
             val info = loadInfoOrThrow(url)
 
+            // DASH потоки содержат 1080p, 1440p, 2160p
+            val dashStreams = info.videoOnlyStreams ?: emptyList()
+            // Muxed потоки обычно только до 360p/720p
+            val muxedStreams = info.videoStreams ?: emptyList()
+
             val heights = buildList {
-                addAll(info.videoStreams.mapNotNull { parseHeight(it.resolution ?: "") })
-                addAll(info.videoOnlyStreams.mapNotNull { parseHeight(it.resolution ?: "") })
-            }.distinct().sortedDescending()
+                addAll(dashStreams.mapNotNull { parseHeight(it.resolution ?: "") })
+                addAll(muxedStreams.mapNotNull { parseHeight(it.resolution ?: "") })
+            }.distinct().filter { it > 0 }.sortedDescending()
 
-            val qualityItems = heights.map { h -> VideoFormatsInfo.QualityItem(heightToLabel(h), h) }
-
-            val groupedAudio = linkedMapOf<String, String>()
-            for (stream in info.audioStreams) {
-                val label = buildAudioTrackLabel(stream)
-                val key = buildAudioTrackKey(stream, label)
-                groupedAudio.putIfAbsent(key, label)
+            if (heights.isEmpty()) {
+                // Если стандартный парсинг провалился, попробуем вытащить любые цифры
+                val fallback = (dashStreams + muxedStreams)
+                    .mapNotNull { it.resolution?.filter { c -> c.isDigit() }?.take(4)?.toIntOrNull() }
+                    .distinct().filter { it > 100 }.sortedDescending()
+                
+                if (fallback.isEmpty()) throw IllegalStateException("YouTube не вернул доступных видео-форматов")
+                
+                return buildResult(info, fallback)
             }
 
-            val audioLabels = groupedAudio.values
-                .sortedWith(
-                    compareBy<String> { !it.contains("Оригинал", ignoreCase = true) }
-                        .thenBy { it.contains("Дубляж", ignoreCase = true) }
-                        .thenBy { it.lowercase(Locale.ROOT) }
-                )
-
-            Result.success(
-                VideoFormatsInfo(
-                    maxVideoHeight = heights.maxOrNull(),
-                    qualityItems = qualityItems,
-                    audioTracks = audioLabels
-                )
-            )
+            buildResult(info, heights)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun buildResult(info: StreamInfo, heights: List<Int>): Result<VideoFormatsInfo> {
+        val qualityItems = heights.map { h -> VideoFormatsInfo.QualityItem(heightToLabel(h), h) }
+
+        val groupedAudio = linkedMapOf<String, String>()
+        for (stream in info.audioStreams) {
+            val label = buildAudioTrackLabel(stream)
+            val key = buildAudioTrackKey(stream, label)
+            groupedAudio.putIfAbsent(key, label)
+        }
+
+        val audioLabels = groupedAudio.values.sortedWith(
+            compareBy<String> { !it.contains("Оригинал", ignoreCase = true) }
+                .thenBy { it.contains("Дубляж", ignoreCase = true) }
+                .thenBy { it.lowercase(Locale.ROOT) }
+        )
+
+        return Result.success(
+            VideoFormatsInfo(
+                maxVideoHeight = heights.maxOrNull(),
+                qualityItems = qualityItems,
+                audioTracks = audioLabels
+            )
+        )
     }
 
     fun loadRawInfo(url: String): Result<StreamInfo> {
@@ -102,13 +123,11 @@ object YoutubeFormatsService {
                 }
             }.thenBy {
                 val height = it.sourceHeight ?: 0
-                kotlin.math.abs(height - targetHeight)
+                abs(height - targetHeight)
             }.thenBy {
-                if (it.isVideoOnly) 0 else 1
+                if (it.isVideoOnly) 0 else 1 
             }.thenByDescending {
                 it.stream.bitrate
-            }.thenByDescending {
-                it.sourceHeight ?: 0
             }
         )
     }
@@ -189,13 +208,27 @@ object YoutubeFormatsService {
     }
 
     fun parseHeight(resolutionOrLabel: String): Int? {
-        val m = Regex("""(\d{3,4})p""", RegexOption.IGNORE_CASE).find(resolutionOrLabel)
-        return m?.groupValues?.getOrNull(1)?.toIntOrNull()
+        if (resolutionOrLabel.isBlank()) return null
+        
+        // 1. Ищем формат 1080p или 1080p60
+        val pMatch = Regex("""(\d{3,5})p""", RegexOption.IGNORE_CASE).find(resolutionOrLabel)
+        if (pMatch != null) return pMatch.groupValues[1].toIntOrNull()
+        
+        // 2. Ищем формат 1920x1080
+        val xMatch = Regex("""x(\d{3,5})""", RegexOption.IGNORE_CASE).find(resolutionOrLabel)
+        if (xMatch != null) return xMatch.groupValues[1].toIntOrNull()
+        
+        // 3. Просто цифры (если пришло только "1080")
+        val digits = resolutionOrLabel.filter { it.isDigit() }
+        if (digits.length in 3..4) return digits.toIntOrNull()
+        
+        return null
     }
 
     fun heightToLabel(height: Int): String = when (height) {
-        2160 -> "2160p (4К)"
-        1440 -> "1440p (2К)"
+        4320 -> "4320p (8K)"
+        2160 -> "2160p (4K)"
+        1440 -> "1440p (2K)"
         1080 -> "1080p (FHD)"
         720 -> "720p (HD)"
         480 -> "480p (SD)"

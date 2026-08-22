@@ -14,15 +14,19 @@ import android.os.Bundle
 import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.*
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
+import java.net.HttpURLConnection
 import java.net.URL
 
 class MainActivity : AppCompatActivity() {
@@ -75,25 +79,47 @@ class MainActivity : AppCompatActivity() {
     private var resolvedUrl: String? = null
 
     private var currentAppliedFont: String? = null
+    private var currentAppliedSquare: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         val fontType = prefs.getString("font_type", "system")
+        val isSquare = prefs.getBoolean("minecraft_ui", false)
+        
         currentAppliedFont = fontType
+        currentAppliedSquare = isSquare
 
-        if (fontType == "monocraft") {
-            setTheme(R.style.Theme_MarsXZMedia_Monocraft)
-        } else {
-            setTheme(R.style.Theme_MarsXZMedia)
+        // Apply theme based on combination of Font and Square UI settings
+        when {
+            isSquare && fontType == "monocraft" -> setTheme(R.style.Theme_MarsXZMedia_Square_Monocraft)
+            isSquare -> setTheme(R.style.Theme_MarsXZMedia_Square)
+            fontType == "monocraft" -> setTheme(R.style.Theme_MarsXZMedia_Monocraft)
+            else -> setTheme(R.style.Theme_MarsXZMedia)
         }
 
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = true
-            isAppearanceLightNavigationBars = true
-        }
         setContentView(R.layout.activity_main)
+
+        // Force system bar icons color based on theme
+        val isNightMode = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !isNightMode
+            isAppearanceLightNavigationBars = !isNightMode
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.topBar)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(v.paddingLeft, bars.top, v.paddingRight, v.paddingBottom)
+            insets
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottomNavigation)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, bars.bottom)
+            insets
+        }
 
         UiSoundPlayer.init(this)
 
@@ -119,10 +145,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Проверка на изменение шрифта при возвращении из настроек
         val prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         val fontType = prefs.getString("font_type", "system")
-        if (fontType != currentAppliedFont) {
+        val isSquare = prefs.getBoolean("minecraft_ui", false)
+        
+        if (fontType != currentAppliedFont || isSquare != currentAppliedSquare) {
             recreate()
         }
     }
@@ -134,7 +161,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupTopMenu() {
         topToolbar.overflowIcon?.setTint(android.graphics.Color.parseColor("#333333"))
-
         topToolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_settings -> {
@@ -142,13 +168,11 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, SettingsActivity::class.java))
                     true
                 }
-
                 R.id.action_about -> {
                     UiSoundPlayer.playClick(this)
                     startActivity(Intent(this, AboutActivity::class.java))
                     true
                 }
-
                 else -> false
             }
         }
@@ -157,7 +181,6 @@ class MainActivity : AppCompatActivity() {
     private fun bindViews() {
         homeScroll = findViewById(R.id.homeScroll)
         bottomNavigation = findViewById(R.id.bottomNavigation)
-
         urlBox = findViewById(R.id.urlBox)
         topToolbar = findViewById(R.id.topToolbar)
         pasteButton = findViewById(R.id.pasteButton)
@@ -180,20 +203,11 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.setOnItemSelectedListener { item ->
             UiSoundPlayer.playClick(this)
             when (item.itemId) {
-                R.id.nav_home -> {
-                    showHomeScreen()
-                    true
-                }
-
-                R.id.nav_history -> {
-                    showHistoryScreen()
-                    true
-                }
-
+                R.id.nav_home -> { showHomeScreen(); true }
+                R.id.nav_history -> { showHistoryScreen(); true }
                 else -> false
             }
         }
-
         bottomNavigation.selectedItemId = R.id.nav_home
     }
 
@@ -214,69 +228,44 @@ class MainActivity : AppCompatActivity() {
 
     private fun openDownloadedFile(file: File) {
         try {
-            val uri = FileProvider.getUriForFile(
-                this,
-                "$packageName.fileprovider",
-                file
-            )
-
-            val extension = file.extension.lowercase()
-            val mime = MimeTypeMap.getSingleton()
-                .getMimeTypeFromExtension(extension)
-                ?: "*/*"
-
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase()) ?: "*/*"
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, mime)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-
             startActivity(intent)
         } catch (_: ActivityNotFoundException) {
             showInlineNotification("Готово", "Файл сохранён, но приложение для открытия не найдено")
         } catch (e: Exception) {
-            AppLog.write(this, "E", "Не удалось открыть скачанный файл: ${e.message}", "OpenFile", e)
-            showInlineNotification("Готово", "Файл сохранён, но открыть его не удалось")
+            AppLog.write(this, "E", "Не удалось открыть файл: ${e.message}", "OpenFile", e)
         }
     }
 
     private fun showHistoryScreen() {
         homeScroll.visibility = View.GONE
         findViewById<View>(R.id.historyContainer).visibility = View.VISIBLE
-
         if (historyFragment == null) {
             historyFragment = HistoryFragment().apply {
                 onEntrySelected = { entry ->
                     urlBox.setText(entry.url)
                     bottomNavigation.selectedItemId = R.id.nav_home
-
-                    urlBox.postDelayed({
-                        if (!isSearchInProgress && !isDownloadInProgress) {
-                            findButton.performClick()
-                        }
-                    }, 150)
+                    urlBox.postDelayed({ if (!isSearchInProgress && !isDownloadInProgress) findButton.performClick() }, 150)
                 }
             }
-
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.historyContainer, historyFragment!!)
-                .commit()
+            supportFragmentManager.beginTransaction().replace(R.id.historyContainer, historyFragment!!).commit()
         } else {
             historyFragment?.refreshView()
         }
     }
     
     private fun showInlineNotification(title: String, message: String) {
-        AppLog.write(this, "I", "Уведомление: $title - $message", "Notify")
         DownloadNotificationHelper.showSimple(this, title, message)
     }
 
     private fun setupSpinners() {
-        val typeAdapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            listOf("Видео (MP4)", "Аудио (MP3)")
-        )
+        val typeAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, listOf("Видео (MP4)", "Аудио (MP3)"))
         typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         downloadTypeSpinner.adapter = typeAdapter
 
@@ -288,55 +277,25 @@ class MainActivity : AppCompatActivity() {
                 val isAudio = position == 1
                 if (isAudio) {
                     qualityOrBitrateLabel.text = "Выберите битрейт:"
-                    val bitrateAdapter = ArrayAdapter(
-                        this@MainActivity,
-                        android.R.layout.simple_spinner_item,
-                        audioBitrates
-                    )
+                    val bitrateAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, audioBitrates)
                     bitrateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                     qualityOrBitrateSpinner.adapter = bitrateAdapter
                     qualityOrBitrateSpinner.setSelection(audioBitrates.indexOf("320 kbps").coerceAtLeast(0))
                 } else {
                     qualityOrBitrateLabel.text = "Выберите качество:"
-                    applyAvailableQualities(currentVideoQualities.maxOfOrNull { it.height })
+                    applyAvailableQualities(currentVideoQualities)
                 }
-
                 val showAudio = currentAudioTracks.size > 1
                 audioLabel.visibility = if (showAudio) View.VISIBLE else View.GONE
                 audioSpinner.visibility = if (showAudio) View.VISIBLE else View.GONE
                 updateActionButtonsState()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
     }
 
-    private fun isSupportedYoutubeUrl(url: String): Boolean {
-        val lowerUrl = url.lowercase()
-        return lowerUrl.startsWith("https://www.youtube.com") ||
-            lowerUrl.startsWith("https://m.youtube.com") ||
-            lowerUrl.startsWith("https://youtu.be")
-    }
-
-    private fun applyButtonVisualState(
-        button: Button,
-        active: Boolean,
-        activeBackgroundRes: Int,
-        activeTextColor: Int
-    ) {
-        if (active) {
-            try {
-                button.setBackgroundResource(activeBackgroundRes)
-                button.setTextColor(activeTextColor)
-            } catch (_: Exception) {
-            }
-        } else {
-            try {
-                button.setBackgroundResource(R.drawable.btn_mc_inactive)
-                button.setTextColor(Color.parseColor("#757575"))
-            } catch (_: Exception) {
-            }
-        }
+    private fun isSupportedYoutubeUrl(url: String) = url.lowercase().run {
+        startsWith("https://www.youtube.com") || startsWith("https://m.youtube.com") || startsWith("https://youtu.be")
     }
 
     private fun updateActionButtonsState() {
@@ -346,38 +305,36 @@ class MainActivity : AppCompatActivity() {
 
         findButton.text = if (isSearchInProgress) "ПОИСК..." else "ИСКАТЬ ВИДЕО"
         downloadButton.text = if (isDownloadInProgress) "ЗАГРУЗКА..." else "СКАЧАТЬ РЕСУРСЫ"
-
         findButton.isEnabled = canFind
         downloadButton.isEnabled = canDownload
+        urlBox.isEnabled = !isSearchInProgress && !isDownloadInProgress
+        pasteButton.isEnabled = !isSearchInProgress && !isDownloadInProgress
 
-        applyButtonVisualState(findButton, canFind, R.drawable.btn_mc_youtube, Color.WHITE)
-        applyButtonVisualState(downloadButton, canDownload, R.drawable.btn_mc_green, Color.parseColor("#55FF55"))
+        val isNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val inactiveTextColor = ContextCompat.getColor(this, R.color.mc_button_inactive_text)
+        val stoneTextColor = ContextCompat.getColor(this, R.color.mc_stone_text)
+
+        applyButtonVisualState(findButton, canFind, R.drawable.btn_mc_youtube, Color.WHITE, inactiveTextColor)
+        applyButtonVisualState(downloadButton, canDownload, R.drawable.btn_mc_green, Color.parseColor("#55FF55"), inactiveTextColor)
+        
+        // PASTE button visibility and text color
+        applyButtonVisualState(pasteButton, true, R.drawable.btn_mc_stone, stoneTextColor, inactiveTextColor)
+    }
+
+    private fun applyButtonVisualState(button: Button, active: Boolean, res: Int, textColor: Int, inactiveColor: Int) {
+        button.setBackgroundResource(if (active) res else R.drawable.btn_mc_inactive)
+        button.setTextColor(if (active) textColor else inactiveColor)
     }
 
     private fun setupUrlValidation() {
         urlBox.doAfterTextChanged { text ->
             val url = text?.toString()?.trim().orEmpty()
-            val isValidYoutube = isSupportedYoutubeUrl(url)
-
-            if (resolvedUrl != null && resolvedUrl != url) {
-                hasResolvedVideo = false
-                if (!isSearchInProgress && !isDownloadInProgress) {
-                    infoPanel.visibility = View.GONE
-                }
-            }
-
-            when {
-                url.isBlank() -> {
-                    try { urlBox.setBackgroundResource(R.drawable.edittext_mc_style) } catch (_: Exception) {}
-                }
-                isValidYoutube -> {
-                    try { urlBox.setBackgroundResource(R.drawable.edittext_mc_valid) } catch (_: Exception) {}
-                }
-                else -> {
-                    try { urlBox.setBackgroundResource(R.drawable.edittext_mc_invalid) } catch (_: Exception) {}
-                }
-            }
-
+            if (resolvedUrl != null && resolvedUrl != url) hasResolvedVideo = false
+            urlBox.setBackgroundResource(when {
+                url.isBlank() -> R.drawable.edittext_mc_style
+                isSupportedYoutubeUrl(url) -> R.drawable.edittext_mc_valid
+                else -> R.drawable.edittext_mc_invalid
+            })
             updateActionButtonsState()
         }
     }
@@ -385,21 +342,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupPasteButton() {
         pasteButton.setOnClickListener {
             UiSoundPlayer.playClick(this)
-
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = clipboard.primaryClip
-            val text = if (clip != null && clip.itemCount > 0) {
-                clip.getItemAt(0).coerceToText(this).toString()
-            } else {
-                ""
-            }
-
+            val text = clipboard.primaryClip?.getItemAt(0)?.coerceToText(this).toString()
             if (text.isNotBlank()) {
                 urlBox.setText(text)
-                urlBox.post { urlBox.setSelection(0) }
-            } else {
-                Toast.makeText(this, "Буфер обмена пуст", Toast.LENGTH_SHORT).show()
-            }
+                urlBox.setSelection(0)
+            } else Toast.makeText(this, "Буфер обмена пуст", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -408,172 +356,62 @@ class MainActivity : AppCompatActivity() {
             UiSoundPlayer.playClick(this)
             val url = urlBox.text.toString().trim()
             if (url.isBlank() || isSearchInProgress || isDownloadInProgress) return@setOnClickListener
-
             isSearchInProgress = true
             hasResolvedVideo = false
             updateActionButtonsState()
-            AppLog.write(this, "I", "Поиск видео: $url")
             showInlineNotification("Анализ", "Получаю информацию о видео…")
 
             fetchVideoDataWithRetry(url) { metaResult, formatsResult ->
                 isSearchInProgress = false
-
                 val info = metaResult.getOrNull()
+                val isAudioRequest = downloadTypeSpinner.selectedItemPosition == 1
+                
                 if (info != null) {
-                    resolvedUrl = url
-                    hasResolvedVideo = true
+                    resolvedUrl = url; hasResolvedVideo = true
                     infoPanel.visibility = View.VISIBLE
                     videoTitle.text = formatTitle(info.title)
-
                     HistoryStore.add(this, formatTitle(info.title), url)
-
-                    val formattedDescription = formatDescription(info.description)
-                    if (formattedDescription.isBlank()) {
-                        videoDescription.visibility = View.GONE
-                    } else {
-                        videoDescription.visibility = View.VISIBLE
-                        videoDescription.text = formattedDescription
-                    }
-
+                    videoDescription.text = formatDescription(info.description)
                     videoAuthor.text = "Автор: ${info.author}"
-                    videoDuration.text = "Время: ${info.durationText}"
-
-                    if (!info.thumbnailUrl.isNullOrBlank()) {
-                        loadThumbnail(info.thumbnailUrl)
-                    } else {
-                        previewImage.setImageResource(android.R.drawable.ic_media_play)
-                    }
+                    videoDuration.text = info.durationText
+                    if (!info.thumbnailUrl.isNullOrBlank()) loadThumbnail(info.thumbnailUrl)
                 } else {
-                    resolvedUrl = null
-                    hasResolvedVideo = false
                     infoPanel.visibility = View.GONE
-                    showInlineNotification("Ошибка", metaResult.exceptionOrNull()?.message ?: "Ошибка поиска видео")
-                    updateActionButtonsState()
-                    return@fetchVideoDataWithRetry
+                    val error = metaResult.exceptionOrNull()
+                    val rawMsg = error?.message ?: "Unknown search error"
+                    val code = if (rawMsg.contains("403")) "403" else if (rawMsg.contains("404")) "404" else "Error"
+                    ErrorReporter.report(this, code, rawMsg, "Search", isAudioRequest)
                 }
 
                 val formats = formatsResult.getOrNull()
                 if (formats != null) {
-                    currentVideoQualities = if (formats.qualityItems.isEmpty()) allVideoQualities else formats.qualityItems
+                    currentVideoQualities = formats.qualityItems
                     applyAudioTrackLabels(formats.audioTracks)
-
-                    if (downloadTypeSpinner.selectedItemPosition == 0) {
-                        applyAvailableQualities(currentVideoQualities.maxOfOrNull { it.height })
-                    }
+                    if (downloadTypeSpinner.selectedItemPosition == 0) applyAvailableQualities(currentVideoQualities)
                 } else {
-                    AppLog.write(
-                        this,
-                        "W",
-                        "Форматы не получены: ${formatsResult.exceptionOrNull()?.message}",
-                        "Formats"
-                    )
-                    currentVideoQualities = allVideoQualities
-                    applyAudioTrackLabels(listOf("Авто"))
-
-                    if (downloadTypeSpinner.selectedItemPosition == 0) {
-                        applyAvailableQualities(null)
+                    val error = formatsResult.exceptionOrNull()
+                    if (hasResolvedVideo) { // Meta success but formats failed
+                         val rawMsg = error?.message ?: "Unknown formats error"
+                         val code = if (rawMsg.contains("403")) "403" else if (rawMsg.contains("404")) "404" else "FormatError"
+                         ErrorReporter.report(this, code, rawMsg, "Formats", isAudioRequest)
                     }
                 }
-
-                showInlineNotification("Готово", "Информация о видео получена")
                 updateActionButtonsState()
             }
         }
     }
 
-    private fun looksBrokenText(text: String?): Boolean {
-        if (text.isNullOrBlank()) return true
-
-        val value = text.trim()
-        if (value.isBlank()) return true
-
-        val questionCount = value.count { it == '?' }
-        val ratio = questionCount.toDouble() / value.length.coerceAtLeast(1)
-
-        return ratio > 0.25
-    }
-
-    private fun isWeakFormatsResult(formats: VideoFormatsInfo?): Boolean {
-        if (formats == null) return true
-
-        val maxHeight = formats.qualityItems.maxOfOrNull { it.height } ?: 0
-        val noAudioTracks = formats.audioTracks.isEmpty()
-
-        return maxHeight <= 360 || noAudioTracks
-    }
-
-    private fun shouldRetryResult(info: VideoInfo?, formats: VideoFormatsInfo?): Boolean {
-        val brokenTitle = looksBrokenText(info?.title)
-        val brokenDescription = looksBrokenText(info?.description)
-        val missingThumbnail = info?.thumbnailUrl.isNullOrBlank()
-        val weakFormats = isWeakFormatsResult(formats)
-
-        return brokenTitle || brokenDescription || missingThumbnail || weakFormats
-    }
-
-    private fun buildRetryReason(info: VideoInfo?, formats: VideoFormatsInfo?): String {
-        val reasons = mutableListOf<String>()
-
-        if (looksBrokenText(info?.title)) reasons += "битый заголовок"
-        if (looksBrokenText(info?.description)) reasons += "битое описание"
-        if (info?.thumbnailUrl.isNullOrBlank()) reasons += "нет превью"
-
-        val maxHeight = formats?.qualityItems?.maxOfOrNull { it.height } ?: 0
-        if (maxHeight <= 360) reasons += "максимум только ${maxHeight}p"
-        if (formats?.audioTracks.isNullOrEmpty()) reasons += "нет звуковых дорожек"
-
-        return if (reasons.isEmpty()) "неизвестная причина" else reasons.joinToString(", ")
-    }
-
-    private fun fetchVideoDataWithRetry(
-        url: String,
-        maxAttempts: Int = 2,
-        delayMs: Long = 800,
-        onDone: (Result<VideoInfo>, Result<VideoFormatsInfo>) -> Unit
-    ) {
+    private fun fetchVideoDataWithRetry(url: String, onDone: (Result<VideoInfo>, Result<VideoFormatsInfo>) -> Unit) {
         Thread {
-            var finalMeta: Result<VideoInfo> = Result.failure(IllegalStateException("Нет данных"))
-            var finalFormats: Result<VideoFormatsInfo> = Result.failure(IllegalStateException("Нет данных"))
-
-            for (attempt in 1..maxAttempts) {
-                AppLog.write(this, "I", "Попытка получения данных #$attempt", "Fetch")
-
-                val metaResult = YoutubeSearchService.searchByUrl(url)
-                val formatsResult = YoutubeFormatsService.loadFormats(url)
-
-                val info = metaResult.getOrNull()
-                val formats = formatsResult.getOrNull()
-
-                finalMeta = metaResult
-                finalFormats = formatsResult
-
-                val shouldRetry = shouldRetryResult(info, formats)
-
-                if (!shouldRetry) {
-                    AppLog.write(this, "I", "Попытка #$attempt успешна: данные выглядят нормальными", "Fetch")
-                    break
-                }
-
-                val reason = buildRetryReason(info, formats)
-                AppLog.write(this, "W", "Попытка #$attempt дала слабый/битый результат: $reason", "Fetch")
-
-                if (attempt < maxAttempts) {
-                    AppLog.write(
-                        this,
-                        "I",
-                        "Повторный запрос через ${delayMs}мс. Возможная причина: слабый интернет или холодный старт.",
-                        "Fetch"
-                    )
-                    try {
-                        Thread.sleep(delayMs)
-                    } catch (_: Exception) {
-                    }
-                }
+            var meta: Result<VideoInfo> = Result.failure(Exception())
+            var formats: Result<VideoFormatsInfo> = Result.failure(Exception())
+            for (attempt in 1..2) {
+                meta = YoutubeSearchService.searchByUrl(url)
+                formats = YoutubeFormatsService.loadFormats(url)
+                if (meta.isSuccess && formats.isSuccess) break
+                Thread.sleep(800)
             }
-
-            runOnUiThread {
-                onDone(finalMeta, finalFormats)
-            }
+            runOnUiThread { onDone(meta, formats) }
         }.start()
     }
 
@@ -581,202 +419,69 @@ class MainActivity : AppCompatActivity() {
         downloadButton.setOnClickListener {
             UiSoundPlayer.playClick(this)
             val url = urlBox.text.toString().trim()
-            if (url.isBlank()) {
-                showInlineNotification("Ошибка", "Сначала вставьте ссылку")
-                return@setOnClickListener
-            }
-            if (isSearchInProgress || isDownloadInProgress) return@setOnClickListener
-            if (!hasResolvedVideo || resolvedUrl != url) {
-                showInlineNotification("Ошибка", "Сначала нажмите ИСКАТЬ ВИДЕО для текущей ссылки")
-                return@setOnClickListener
-            }
-
+            if (!hasResolvedVideo || resolvedUrl != url) return@setOnClickListener
             val isAudio = downloadTypeSpinner.selectedItemPosition == 1
-            val selectedQuality = if (!isAudio) qualityOrBitrateSpinner.selectedItem?.toString() else null
-            val selectedBitrate = if (isAudio) qualityOrBitrateSpinner.selectedItem?.toString() else null
-            val selectedAudioTrack = if (audioSpinner.visibility == View.VISIBLE) audioSpinner.selectedItem?.toString() else null
-            val title = videoTitle.text?.toString()?.trim().orEmpty().ifBlank { "Video" }
-
-            isDownloadInProgress = true
-            updateActionButtonsState()
-
+            isDownloadInProgress = true; updateActionButtonsState()
             Thread {
-                val result = MediaDownloadManager.download(
-                    this,
-                    MediaDownloadManager.Request(
-                        url = url,
-                        isAudio = isAudio,
-                        title = title,
-                        selectedQualityLabel = selectedQuality,
-                        selectedBitrateLabel = selectedBitrate,
-                        selectedAudioTrackLabel = selectedAudioTrack
-                    )
-                )
-
+                val res = MediaDownloadManager.download(this, MediaDownloadManager.Request(
+                    url = url, isAudio = isAudio, title = videoTitle.text.toString(),
+                    selectedQualityLabel = if (!isAudio) qualityOrBitrateSpinner.selectedItem?.toString() else null,
+                    selectedBitrateLabel = if (isAudio) qualityOrBitrateSpinner.selectedItem?.toString() else null,
+                    selectedAudioTrackLabel = if (audioSpinner.visibility == View.VISIBLE) audioSpinner.selectedItem?.toString() else null
+                ))
                 runOnUiThread {
-                    isDownloadInProgress = false
-                    updateActionButtonsState()
-
-                    result.onSuccess { file ->
-                        AppLog.write(this, "I", "Загрузка завершена: ${file.absolutePath}", "Download")
-                        UiSoundPlayer.playApply(this)
-                        openDownloadedFileIfAllowed(file)
-                    }.onFailure { e ->
-                        AppLog.write(this, "E", "Ошибка загрузки", "Download", e)
-                        showInlineNotification("Ошибка", e.message ?: "Ошибка загрузки")
-                    }
+                    isDownloadInProgress = false; updateActionButtonsState()
+                    res.onSuccess { UiSoundPlayer.playApply(this); openDownloadedFileIfAllowed(it) }
+                       .onFailure {
+                           val rawMsg = it.message ?: "Download failed"
+                           val code = if (rawMsg.contains("403")) "403" else if (rawMsg.contains("404")) "404" else "DL-Err"
+                           ErrorReporter.report(this, code, rawMsg, "Download", isAudio)
+                       }
                 }
             }.start()
         }
     }
 
-    private fun formatTitle(raw: String): String {
-        var title = raw.replace(Regex("[-_|/]"), " ")
-        title = title.replace(Regex("\\s+"), " ").trim()
+    private fun formatTitle(raw: String) = raw.replace(Regex("[-_|/]"), " ").replace(Regex("\\s+"), " ").trim()
 
-        if (title.length <= 100) return title
-
-        var cut = title.take(100)
-        val lastSpace = cut.lastIndexOf(' ')
-        if (lastSpace > 80) {
-            cut = cut.substring(0, lastSpace)
-        }
-
-        return cut.trim { !it.isLetterOrDigit() }
-    }
-
-    private fun formatDescription(raw: String?, minChars: Int = 28, maxChars: Int = 170): String {
-        if (raw.isNullOrBlank()) return ""
-
-        var text = raw.replace(Regex("[\\n\\r\\t]+"), " ").trim()
-        text = text.replace(Regex("[,;:]"), ".")
-        text = text.replace(Regex("\\.+"), ".")
-        text = text.replace(Regex("\\s+"), " ").trim()
-
-        if (text.isBlank()) return ""
-
-        val terminators = listOf('.', '!', '?')
-        val sentences = text.split(Regex("(?<=[.!?])\\s+"))
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .map { s ->
-                if (s.last() !in terminators) "$s." else s
-            }
-
-        val result = StringBuilder()
-        for (sentence in sentences) {
-            val next = if (result.isEmpty()) sentence else "$result $sentence"
-            if (next.length > maxChars) {
-                if (result.isEmpty()) {
-                    val cut = next.take(maxChars).trim()
-                    return if (cut.isNotEmpty() && cut.last() !in terminators) "$cut." else cut
-                }
-                break
-            }
-            result.clear()
-            result.append(next)
-            if (result.length >= minChars) break
-        }
-
-        return result.toString().trim()
-    }
+    private fun formatDescription(raw: String?) = raw?.replace(Regex("[\\n\\r\\t]+"), " ")?.take(150)?.trim() ?: ""
 
     private fun loadThumbnail(url: String) {
         Thread {
-            var success = false
-
-            repeat(2) { attempt ->
-                try {
-                    URL(url).openStream().use { stream ->
-                        val bitmap = BitmapFactory.decodeStream(stream)
-                        if (bitmap != null) {
-                            runOnUiThread {
-                                previewImage.setImageBitmap(bitmap)
-                            }
-                            success = true
-                            return@repeat
-                        }
-                    }
-                } catch (e: Exception) {
-                    AppLog.write(this, "W", "Не удалось загрузить превью, попытка ${attempt + 1}: ${e.message}", "Thumbnail")
+            try {
+                val conn = URL(url).openConnection() as HttpURLConnection
+                conn.setRequestProperty("User-Agent", DownloaderImpl.DESKTOP_UA)
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+                conn.inputStream.use { 
+                    val bitmap = BitmapFactory.decodeStream(it)
+                    runOnUiThread { previewImage.setImageBitmap(bitmap) }
                 }
-
-                if (!success && attempt == 0) {
-                    try {
-                        Thread.sleep(500)
-                    } catch (_: Exception) {
-                    }
-                }
-            }
-
-            if (!success) {
-                runOnUiThread {
-                    previewImage.setImageResource(android.R.drawable.ic_media_play)
-                }
-                AppLog.write(this, "W", "Превью не загрузилось даже после повторной попытки", "Thumbnail")
+            } catch (e: Exception) {
+                AppLog.write(this, "E", "Ошибка загрузки превью: ${e.message}")
             }
         }.start()
     }
 
-    private fun applyAvailableQualities(maxHeight: Int?) {
-        currentVideoQualities = if (maxHeight == null) {
-            allVideoQualities
-        } else {
-            allVideoQualities.filter { it.height <= maxHeight }
-        }
-
-        val labels = currentVideoQualities.map { it.label }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, labels)
+    private fun applyAvailableQualities(qualities: List<VideoFormatsInfo.QualityItem>?) {
+        val list = if (qualities.isNullOrEmpty()) allVideoQualities else qualities
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, list.map { it.label })
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         qualityOrBitrateSpinner.adapter = adapter
         qualityOrBitrateSpinner.setSelection(0)
     }
 
     private fun applyAudioTrackLabels(tracks: List<String>) {
-        val formattedTracks = tracks.map { rawTrack ->
-            formatAudioTrackName(rawTrack)
-        }
-
-        currentAudioTracks = if (formattedTracks.isEmpty()) listOf("Авто") else formattedTracks
-
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, currentAudioTracks)
+        val list = if (tracks.isEmpty()) listOf("Авто") else tracks
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, list)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         audioSpinner.adapter = adapter
-
-        val preferredIndex = currentAudioTracks.indexOfFirst {
-            it.contains("Оригинал", ignoreCase = true) || it.contains("Original", ignoreCase = true)
-        }
-        audioSpinner.setSelection(if (preferredIndex >= 0) preferredIndex else 0)
-
-        val showAudio = currentAudioTracks.size > 1
-        audioLabel.visibility = if (showAudio) View.VISIBLE else View.GONE
-        audioSpinner.visibility = if (showAudio) View.VISIBLE else View.GONE
-    }
-
-    private fun formatAudioTrackName(raw: String): String {
-        if (raw.isBlank()) return raw
-        val regex = Regex("""(.+?)\s*\((.+?)\)""")
-        val match = regex.find(raw)
-
-        return if (match != null) {
-            var language = match.groupValues[1].trim()
-            val extraInfo = match.groupValues[2].trim()
-            val isSimplified = extraInfo.contains("Simplified", ignoreCase = true) || extraInfo.contains("упрощ", ignoreCase = true)
-            val isTraditional = extraInfo.contains("Traditional", ignoreCase = true) || extraInfo.contains("традиц", ignoreCase = true)
-            if (isSimplified) language = "$language (Упрощенный)"
-            if (isTraditional) language = "$language (Традиционный)"
-            val isOriginal = extraInfo.contains("original", ignoreCase = true) || extraInfo.contains("оригин", ignoreCase = true)
-            val type = if (isOriginal) "Оригинал" else "Дубляж"
-            "$language ▪ $type"
-        } else {
-            "$raw ▪ Оригинал"
-        }
+        audioLabel.visibility = if (list.size > 1) View.VISIBLE else View.GONE
+        audioSpinner.visibility = if (list.size > 1) View.VISIBLE else View.GONE
     }
 
     private fun ensureNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
         }
     }

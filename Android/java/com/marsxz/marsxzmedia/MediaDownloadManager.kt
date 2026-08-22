@@ -14,6 +14,9 @@ import kotlin.math.roundToInt
 
 object MediaDownloadManager {
     private val notificationIds = AtomicInteger(3000)
+    
+    // User-Agent ДОЛЖЕН БЫТЬ ИДЕНТИЧЕН DownloaderImpl.DESKTOP_UA
+    private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
     data class Request(
         val url: String,
@@ -280,10 +283,23 @@ object MediaDownloadManager {
 
         val connection = (URL(content).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            connectTimeout = 20000
-            readTimeout = 20000
+            connectTimeout = 30000
+            readTimeout = 30000
             instanceFollowRedirects = true
-            setRequestProperty("User-Agent", "Mozilla/5.0")
+            
+            // Идентичные заголовки для DASH-фрагментов
+            setRequestProperty("User-Agent", USER_AGENT)
+            setRequestProperty("Accept", "*/*")
+            setRequestProperty("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
+            setRequestProperty("Connection", "keep-alive")
+            
+            if (content.contains("googlevideo.com")) {
+                setRequestProperty("Referer", "https://www.youtube.com/")
+                setRequestProperty("Origin", "https://www.youtube.com")
+                setRequestProperty("Sec-Fetch-Mode", "cors")
+                setRequestProperty("Sec-Fetch-Site", "cross-site")
+                setRequestProperty("Sec-Fetch-Dest", "empty")
+            }
         }
 
         val total = getContentLengthCompat(connection)
@@ -292,7 +308,7 @@ object MediaDownloadManager {
 
         connection.inputStream.use { input ->
             FileOutputStream(file).use { output ->
-                val buffer = ByteArray(8192)
+                val buffer = ByteArray(16384 * 2)
                 var read: Int
                 var written = 0L
 
@@ -306,7 +322,7 @@ object MediaDownloadManager {
                     }
 
                     val percent = tracker.combinedPercent()
-                    val bucket = (percent * 10).roundToInt() // Обновляем каждые 0.1%
+                    val bucket = (percent * 5).roundToInt()
 
                     if (bucket != lastBucket) {
                         lastBucket = bucket
@@ -316,7 +332,6 @@ object MediaDownloadManager {
                         val speedBytesPerMs = written.toDouble() / elapsedMillis
                         val speedBytesPerSec = (speedBytesPerMs * 1000).toLong()
 
-                        // Расчет ETA
                         val etaStr = if (total > 0 && speedBytesPerMs > 0) {
                             val remainingBytes = total - written
                             val remainingMillis = (remainingBytes / speedBytesPerMs).toLong()
@@ -338,7 +353,7 @@ object MediaDownloadManager {
                             isAudio = isAudio,
                             percent = percent,
                             speed = formatSpeed(speedBytesPerSec),
-                            eta = etaStr, // ТЕПЕРЬ ПЕРЕДАЕМ РЕАЛЬНОЕ ВРЕМЯ
+                            eta = etaStr,
                             sizeInfo = sizeInfo
                         )
                     }
@@ -354,13 +369,28 @@ object MediaDownloadManager {
 
         return try {
             val connection = (URL(contentUrl).openConnection() as HttpURLConnection).apply {
-                requestMethod = "HEAD"
+                requestMethod = "GET"
+                setRequestProperty("Range", "bytes=0-1")
                 connectTimeout = 10000
                 readTimeout = 10000
                 instanceFollowRedirects = true
-                setRequestProperty("User-Agent", "Mozilla/5.0")
+                setRequestProperty("User-Agent", USER_AGENT)
+                
+                if (contentUrl.contains("googlevideo.com")) {
+                    setRequestProperty("Referer", "https://www.youtube.com/")
+                    setRequestProperty("Origin", "https://www.youtube.com")
+                    setRequestProperty("Sec-Fetch-Mode", "cors")
+                    setRequestProperty("Sec-Fetch-Site", "cross-site")
+                }
             }
-            val len = getContentLengthCompat(connection)
+            
+            val rangeHeader = connection.getHeaderField("Content-Range")
+            val len = if (rangeHeader != null) {
+                rangeHeader.substringAfterLast("/").toLongOrNull() ?: -1L
+            } else {
+                getContentLengthCompat(connection)
+            }
+            
             connection.disconnect()
             if (len > 0) len else -1L
         } catch (_: Exception) {
@@ -391,7 +421,6 @@ object MediaDownloadManager {
                 }
 
                 knownVideo && !knownAudio -> {
-                    // Если размер аудио неизвестен, делаем мягкий хвост под аудио
                     val videoPart = (downloadedVideoBytes.toDouble() * 85.0 / totalVideoBytes.toDouble()).coerceIn(0.0, 85.0)
                     val audioPart = if (downloadedAudioBytes > 0L) 10.0 else 0.0
                     (videoPart + audioPart).coerceIn(0.0, 95.0)
@@ -403,7 +432,6 @@ object MediaDownloadManager {
                 }
 
                 else -> {
-                    // Вообще ничего не знаем — хотя бы движемся по фазам
                     when {
                         downloadedAudioBytes > 0L -> 90.0
                         downloadedVideoBytes > 0L -> 50.0
