@@ -1,0 +1,78 @@
+MarsXZ Media - итоговая сборка Modern + Legacy
+================================================
+Дата сборки: 2026-08-21
+Версия: 1.3.5, синхронизирована с Android-портом
+
+СОСТОЯНИЕ
+---------
+Оба проекта успешно опубликованы под Windows x86 как self-contained single-file EXE.
+
+Modern
+------
+Проект: MarsXZMedia.csproj
+TargetFramework: net10.0-windows10.0.18362.0
+Runtime: win-x86
+Папка публикации:
+/home/marsxz/Projects/Windows/MarsXZ Media/bin/Release/net10.0-windows10.0.18362.0/win-x86/publish
+Основной файл: MarsXZ Media.exe
+Файл содержит .NET-зависимости приложения внутри EXE; рядом DLL/runtime-файлы не требуются.
+
+Legacy
+------
+Проект: MarsXZMedia.Legacy.csproj
+TargetFramework: net6.0-windows
+Runtime: win-x86
+Папка публикации:
+/home/marsxz/Projects/Windows/MarsXZ Media Legacy/bin/Release/net6.0-windows/win-x86/publish
+Основной файл: MarsXZ Media Legacy.exe
+Файл содержит .NET-зависимости приложения внутри EXE; рядом DLL/runtime-файлы не требуются.
+
+ЕДИНЫЙ УСТАНОВЩИК
+-----------------
+Скрипт Inno Setup:
+/home/marsxz/Projects/Windows/MarsXZ Media/bin/Release/net10.0-windows10.0.18362.0/win-x86/publish/MarsXZ Media.iss
+
+Файлы установщика рядом со скриптом:
+- installer.ico
+- license.txt
+- MarsXZ Media.iss
+
+Логика установщика:
+- Windows 7 и выше разрешены: MinVersion=6.1
+- Windows 7/8/8.1 получают Legacy: MarsXZ Media Legacy.exe
+- Windows 10 1903 (build 18362) и выше получают Modern: MarsXZ Media.exe
+- Modern и Legacy лежат в одном установочном пакете
+- installer.ico используется как иконка установщика
+- license.txt используется как лицензия
+- Windows 7 получает отдельный yt-dlp_x86_win7.exe из совместимой сборки.
+- Windows 8 и новее получают официальный yt-dlp_x86.exe.
+- Лицензия оформлена для приложения MarsXZ Media, версия 1.3.5, правообладатель MarsXZ.
+
+КОМПИЛЯЦИЯ УСТАНОВЩИКА НА WINDOWS
+----------------------------------
+Открыть командную строку в папке:
+/home/marsxz/Projects/Windows/MarsXZ Media/bin/Release/net10.0-windows10.0.18362.0/win-x86/publish
+
+Запустить:
+ISCC.exe "MarsXZ Media.iss"
+
+Готовый установщик появится в подпапке:
+InstallerOutput/MarsXZMedia_Setup.exe
+
+КОМАНДЫ ПУБЛИКАЦИИ В UBUNTU
+----------------------------
+Modern:
+dotnet publish "/home/marsxz/Projects/Windows/MarsXZ Media/MarsXZMedia.csproj" -c Release -r win-x86 -o /tmp/marsxz-modern-publish /p:EnableWindowsTargeting=true
+
+Legacy:
+dotnet publish "/home/marsxz/Projects/Windows/MarsXZ Media Legacy/MarsXZMedia.Legacy.csproj" -c Release -r win-x86 -o /tmp/marsxz-legacy-publish /p:EnableWindowsTargeting=true
+
+ПРЕДУПРЕЖДЕНИЯ СБОРКИ
+---------------------
+- Legacy использует net6.0-windows, который больше не поддерживается.
+- Modern получает предупреждение NuGet о известной уязвимости в Tmds.DBus.Protocol 0.21.2.
+- Оба проекта опубликованы успешно.
+- Inno Setup 6 установлен в Wine на Ubuntu.
+- Финальный InstallerOutput/MarsXZMedia_Setup.exe пересобран через Wine 21 августа 2026 года; размер около 190 МБ.
+- Publish-каталоги содержат EXE, Assets и внешние инструменты ffmpeg/yt-dlp/node/qjs, которые нужны приложению во время работы; DLL и PDB удалены.
+- Для Windows 7 используется совместимая сборка yt-dlp от nicolaasjan/yt-dlp, потому что актуальные официальные Windows-бинарники постепенно повышают минимальную версию Windows.

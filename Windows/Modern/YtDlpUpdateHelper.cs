@@ -22,10 +22,21 @@ internal sealed class YtDlpUpdateInfo
 internal static class YtDlpUpdateHelper
 {
     public const string AssetNameX86 = "yt-dlp_x86.exe";
+    public const string AssetNameX86Win7 = "yt-dlp_x86_win7.exe";
     public const string DefaultX86DownloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_x86.exe";
+    public const string DefaultX86Win7DownloadUrl = "https://github.com/nicolaasjan/yt-dlp/releases/latest/download/yt-dlp_x86_win7.exe";
     private const string LatestReleaseApiUrl = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest";
-    private static readonly string CachePath = Path.Combine(AppPaths.DataRoot, "yt-dlp-update-cache.json");
+    private const string LatestWin7ReleaseApiUrl = "https://api.github.com/repos/nicolaasjan/yt-dlp/releases/latest";
+    private static string CachePath => Path.Combine(AppPaths.DataRoot, IsWindows7OrEarlier() ? "yt-dlp-update-cache-win7.json" : "yt-dlp-update-cache.json");
     private static readonly TimeSpan CacheLifetime = TimeSpan.FromHours(12);
+
+    public static string DefaultDownloadUrl => IsWindows7OrEarlier() ? DefaultX86Win7DownloadUrl : DefaultX86DownloadUrl;
+
+    public static bool IsWindows7OrEarlier()
+    {
+        var version = Environment.OSVersion.Version;
+        return version.Major < 6 || (version.Major == 6 && version.Minor <= 1);
+    }
 
     public static async Task<YtDlpUpdateInfo> CheckAsync(string ytDlpPath, CancellationToken token)
     {
@@ -60,7 +71,7 @@ internal static class YtDlpUpdateHelper
                 IsOutdated = isOutdated,
                 CurrentVersion = currentVersion,
                 LatestVersion = release.Version,
-                DownloadUrl = string.IsNullOrWhiteSpace(release.DownloadUrl) ? DefaultX86DownloadUrl : release.DownloadUrl,
+                    DownloadUrl = string.IsNullOrWhiteSpace(release.DownloadUrl) ? DefaultDownloadUrl : release.DownloadUrl,
                 Message = isOutdated
                     ? $"yt-dlp устарел: {currentVersion} -> {release.Version}"
                     : $"yt-dlp уже актуален: {currentVersion}"
@@ -141,14 +152,16 @@ internal static class YtDlpUpdateHelper
             client.DefaultRequestHeaders.UserAgent.ParseAdd("MarsXZ Media");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
 
-            using var response = await client.GetAsync(LatestReleaseApiUrl, token).ConfigureAwait(false);
+            string releaseApiUrl = IsWindows7OrEarlier() ? LatestWin7ReleaseApiUrl : LatestReleaseApiUrl;
+            using var response = await client.GetAsync(releaseApiUrl, token).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             await using var stream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
             using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: token).ConfigureAwait(false);
 
             string version = string.Empty;
-            string downloadUrl = DefaultX86DownloadUrl;
+            string downloadUrl = DefaultDownloadUrl;
+            string assetName = IsWindows7OrEarlier() ? AssetNameX86Win7 : AssetNameX86;
 
             if (doc.RootElement.TryGetProperty("tag_name", out var tagNameElement))
                 version = NormalizeVersion(tagNameElement.GetString() ?? string.Empty);
@@ -158,7 +171,7 @@ internal static class YtDlpUpdateHelper
                 foreach (var asset in assetsElement.EnumerateArray())
                 {
                     string name = asset.TryGetProperty("name", out var nameElement) ? (nameElement.GetString() ?? string.Empty) : string.Empty;
-                    if (!string.Equals(name, AssetNameX86, StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(name, assetName, StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     if (asset.TryGetProperty("browser_download_url", out var urlElement))
@@ -187,7 +200,7 @@ internal static class YtDlpUpdateHelper
     private static bool TryReadCache(out string version, out string downloadUrl, out DateTime checkedAtUtc)
     {
         version = string.Empty;
-        downloadUrl = DefaultX86DownloadUrl;
+        downloadUrl = DefaultDownloadUrl;
         checkedAtUtc = DateTime.MinValue;
 
         try
@@ -203,8 +216,8 @@ internal static class YtDlpUpdateHelper
                 ? NormalizeVersion(versionElement.GetString() ?? string.Empty)
                 : string.Empty;
             downloadUrl = root.TryGetProperty("downloadUrl", out var urlElement)
-                ? (urlElement.GetString() ?? DefaultX86DownloadUrl)
-                : DefaultX86DownloadUrl;
+                ? (urlElement.GetString() ?? DefaultDownloadUrl)
+                : DefaultDownloadUrl;
 
             if (root.TryGetProperty("checkedAtUtc", out var checkedElement))
                 DateTime.TryParse(checkedElement.GetString(), out checkedAtUtc);
@@ -225,7 +238,7 @@ internal static class YtDlpUpdateHelper
             var payload = new
             {
                 latestVersion = NormalizeVersion(version),
-                downloadUrl = string.IsNullOrWhiteSpace(downloadUrl) ? DefaultX86DownloadUrl : downloadUrl,
+                downloadUrl = string.IsNullOrWhiteSpace(downloadUrl) ? DefaultDownloadUrl : downloadUrl,
                 checkedAtUtc = checkedAtUtc.ToString("O")
             };
 

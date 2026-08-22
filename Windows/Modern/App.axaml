@@ -2,11 +2,27 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MarsXZMedia.App"
              RequestedThemeVariant="Default">
-    
+
     <Application.Resources>
         <FontFamily x:Key="AppFont">Default</FontFamily>
         <FontFamily x:Key="AppFontBold">Default</FontFamily>
-        
+
+        <SolidColorBrush x:Key="AppWindowBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AppSurface" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AppSurfaceAlt" Color="#F0F0F0"/>
+        <SolidColorBrush x:Key="AppTextPrimary" Color="#111111"/>
+        <SolidColorBrush x:Key="AppTextSecondary" Color="#4A4A4A"/>
+        <SolidColorBrush x:Key="AppTextMuted" Color="#666666"/>
+        <SolidColorBrush x:Key="AppBorder" Color="#D9D9D9"/>
+        <SolidColorBrush x:Key="AppInputBackground" Color="#F3F3F3"/>
+        <SolidColorBrush x:Key="AppInputBorder" Color="#B9B9B9"/>
+        <SolidColorBrush x:Key="AppActionButtonBackground" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="AppActionButtonHover" Color="#D0D0D0"/>
+        <SolidColorBrush x:Key="AppActionButtonBorder" Color="#BDBDBD"/>
+        <SolidColorBrush x:Key="AppActionButtonForeground" Color="#111111"/>
+        <SolidColorBrush x:Key="AppLinkColor" Color="#1A73E8"/>
+        <SolidColorBrush x:Key="AppDivider" Color="#DCDCDC"/>
+
         <LinearGradientBrush x:Key="AppBg" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#F5FBF2" Offset="0.0"/>
             <GradientStop Color="#E8F6E2" Offset="0.45"/>
@@ -20,8 +36,11 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-        
-        <Style Selector="TextBlock, Label, Button, CheckBox, RadioButton, ComboBox, ComboBoxItem, MenuItem, TextBox, NumericUpDown">
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}"/>
+        </Style>
+
+        <Style Selector="TextBox, ComboBox, NumericUpDown, TextBlock, Label, Button, CheckBox, RadioButton, ComboBoxItem, MenuItem">
             <Setter Property="TextElement.FontFamily" Value="{DynamicResource AppFont}"/>
         </Style>
         <Style Selector="TextBlock[FontWeight=Bold], Label[FontWeight=Bold], Button[FontWeight=Bold], CheckBox[FontWeight=Bold], ComboBox[FontWeight=Bold], ComboBoxItem[FontWeight=Bold], MenuItem[FontWeight=Bold]">
@@ -33,7 +52,18 @@
             <Setter Property="TextElement.FontWeight" Value="Bold"/>
         </Style>
         <Style Selector="Window">
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource AppWindowBackground}"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource AppSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}"/>
+            <Setter Property="SelectionBrush" Value="#D9E7F7"/>
+        </Style>
+        <Style Selector="Button.mc-btn">
+            <Setter Property="Background" Value="{DynamicResource AppActionButtonBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppActionButtonBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppActionButtonForeground}"/>
         </Style>
     </Application.Styles>
 </Application>

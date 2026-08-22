@@ -5,65 +5,103 @@
         Width="560"
         Height="540"
         WindowStartupLocation="CenterOwner"
-        Background="White">
+        Background="{DynamicResource AppWindowBackground}">
+
+    <Window.Styles>
+        <Style Selector="Button.about-link-button">
+            <Setter Property="Background" Value="{DynamicResource AppSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppLinkColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppLinkColor}"/>
+        </Style>
+        <Style Selector="Button.about-link-button:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceAlt}"/>
+            <Setter Property="BorderBrush" Value="#0B57D0"/>
+            <Setter Property="Foreground" Value="#0B57D0"/>
+        </Style>
+        <Style Selector="Button.about-link-button:pressed">
+            <Setter Property="Background" Value="{DynamicResource AppSurfaceAlt}"/>
+            <Setter Property="BorderBrush" Value="#0842A0"/>
+            <Setter Property="Foreground" Value="#0842A0"/>
+        </Style>
+    </Window.Styles>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20" Spacing="0">
-            
-            <TextBlock Text="MarsXZ Media v1.2.0"
+
+            <TextBlock Text="MarsXZ Media v1.3.5"
                        FontFamily="{DynamicResource AppFontBold}"
                        FontSize="22"
                        FontWeight="Bold"
-                       Foreground="#000000"
+                       Foreground="{DynamicResource AppTextPrimary}"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,24"/>
 
             <TextBlock Text="MarsXZ Media — настольный инструмент для эффективной загрузки видео и аудио с YouTube."
                        FontSize="16"
-                       Foreground="#333333"
+                       Foreground="{DynamicResource AppTextSecondary}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,12"/>
 
             <TextBlock Text="• Загрузка выполняется с использованием мощного движка yt-dlp."
-                       Foreground="#333333"
+                       Foreground="{DynamicResource AppTextSecondary}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,8"/>
 
             <TextBlock Text="• Обработка, объединение и конвертация файлов выполняются через FFmpeg."
-                       Foreground="#333333"
+                       Foreground="{DynamicResource AppTextSecondary}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,8"/>
 
             <TextBlock Text="• Node.js используется для корректной работы внутренних компонентов."
-                       Foreground="#333333"
+                       Foreground="{DynamicResource AppTextSecondary}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,16"/>
 
-            <Separator Background="#CCCCCC" Height="1" Margin="0,0,0,16"/>
+            <Separator Background="{DynamicResource AppDivider}" Height="1" Margin="0,0,0,16"/>
+
+            <TextBlock Text="Поддержать проект ❤️"
+                       FontFamily="{DynamicResource AppFontBold}"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource AppTextPrimary}"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock Text="В силу возраста я пока не могу принимать финансовые пожертвования. Но если приложение вам помогло, лучшей поддержкой будет подписка на мой YouTube-канал или ⭐ звёздочка проекту на GitHub!"
+                       Foreground="{DynamicResource AppTextSecondary}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,12"/>
+
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
+                <Button x:Name="YoutubeButton" Classes="about-link-button" Content="YouTube канал" Click="OpenYoutube"/>
+                <Button x:Name="GithubButton" Classes="about-link-button" Content="Проект на GitHub" Click="OpenGithub"/>
+            </StackPanel>
+
+            <Separator Background="{DynamicResource AppDivider}" Height="1" Margin="0,0,0,16"/>
 
             <TextBlock Text="Сообщить об ошибке"
                        FontFamily="{DynamicResource AppFontBold}"
                        FontSize="18"
                        FontWeight="Bold"
-                       Foreground="#111111"
+                       Foreground="{DynamicResource AppTextPrimary}"
                        Margin="0,0,0,8"/>
 
             <TextBlock Text="Если вы обнаружили ошибку или недочёт в работе MarsXZ Media, напишите:"
-                       Foreground="#333333"
+                       Foreground="{DynamicResource AppTextSecondary}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,12"/>
 
-            <Border BorderBrush="#1a73e8"
+            <Border BorderBrush="{DynamicResource AppLinkColor}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="8,4"
                     Background="Transparent"
                     HorizontalAlignment="Left"
                     Margin="0,0,0,16">
-                
+
                 <TextBlock x:Name="SupportEmailLink"
-                           Text="marsxz8656@gmail.com"
-                           Foreground="#1a73e8"
+                           Text="marsmanecraft@gmail.com"
+                           Foreground="{DynamicResource AppLinkColor}"
                            FontSize="14"
                            Cursor="Hand"
                            FontWeight="SemiBold"
@@ -72,27 +110,27 @@
 
             <TextBlock x:Name="EmailStatus"
                        Text=""
-                       Foreground="#666666"
+                       Foreground="{DynamicResource AppTextMuted}"
                        FontSize="12"
                        IsVisible="False"
                        TextWrapping="Wrap"
                        Margin="0,0,0,16"/>
 
-            <Separator Background="#CCCCCC" Height="1" Margin="0,0,0,16"/>
+            <Separator Background="{DynamicResource AppDivider}" Height="1" Margin="0,0,0,16"/>
 
             <TextBlock Text="© MarsXZ, 2026. Все права защищены."
-                       Foreground="#666666"
+                       Foreground="{DynamicResource AppTextMuted}"
                        FontSize="12"
                        TextWrapping="Wrap"
                        Margin="0,0,0,4"/>
 
             <TextBlock Text="Проект использует компоненты с открытым исходным кодом."
-                       Foreground="#666666"
+                       Foreground="{DynamicResource AppTextMuted}"
                        FontSize="12"
                        TextWrapping="Wrap"
                        Margin="0,0,0,16"/>
 
-            <Button Content="Закрыть"
+            <Button x:Name="CloseButton" Content="Закрыть"
                     FontFamily="{DynamicResource AppFont}"
                     Width="140"
                     HorizontalAlignment="Center"

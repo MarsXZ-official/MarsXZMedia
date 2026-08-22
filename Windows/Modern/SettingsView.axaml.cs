@@ -18,6 +18,7 @@ public partial class SettingsView : UserControl
     private string _originalMusicPath = "";
     private string _originalFontChoice = "";
     private string _originalSoundTheme = "";
+    private bool _originalSquareInterface = false;
     private string _lastCustomVideoPath = "";
     private string _lastCustomMusicPath = "";
     private bool _hasValidationError = false;
@@ -42,6 +43,7 @@ public partial class SettingsView : UserControl
         _originalMusicPath = MainWindow.MusicPath;
         _originalFontChoice = MainWindow.FontChoice ?? "Default";
         _originalSoundTheme = MainWindow.SoundTheme ?? "None";
+        _originalSquareInterface = MainWindow.SquareInterface;
         _lastCustomVideoPath = string.IsNullOrWhiteSpace(MainWindow.LastCustomVideoPath)
             ? _originalVideoPath
             : MainWindow.LastCustomVideoPath;
@@ -80,14 +82,21 @@ public partial class SettingsView : UserControl
         {
             bool isMonoCraft = MainWindow.FontChoice == "MonoCraft";
             FontChoiceCheckBox.IsChecked = isMonoCraft;
-            FontChoiceCheckBox.Content = isMonoCraft ? "Выключить шрифт MonoCraft" : "Включить шрифт MonoCraft";
+            FontChoiceCheckBox.Content = "Пиксельный шрифт";
         }
 
         if (SoundThemeCheckBox != null)
         {
             bool isSoundOn = MainWindow.SoundTheme != "None";
             SoundThemeCheckBox.IsChecked = isSoundOn;
-            SoundThemeCheckBox.Content = isSoundOn ? "Выключить звуки" : "Включить звуки";
+            SoundThemeCheckBox.Content = "Звуки игры";
+        }
+
+        if (SquareInterfaceCheckBox != null)
+        {
+            bool isSquare = MainWindow.SquareInterface;
+            SquareInterfaceCheckBox.IsChecked = isSquare;
+            SquareInterfaceCheckBox.Content = "Квадратный интерфейс";
         }
 
         _updatingUI = false;
@@ -101,12 +110,12 @@ public partial class SettingsView : UserControl
         if (FontChoiceCheckBox?.IsChecked == true)
         {
             MainWindow.FontChoice = "MonoCraft";
-            if (FontChoiceCheckBox != null) FontChoiceCheckBox.Content = "Выключить шрифт MonoCraft";
+            if (FontChoiceCheckBox != null) FontChoiceCheckBox.Content = "Пиксельный шрифт";
         }
         else
         {
             MainWindow.FontChoice = "Default";
-            if (FontChoiceCheckBox != null) FontChoiceCheckBox.Content = "Включить шрифт MonoCraft";
+            if (FontChoiceCheckBox != null) FontChoiceCheckBox.Content = "Пиксельный шрифт";
         }
 
         ApplyFontChoice();      
@@ -122,18 +131,54 @@ public partial class SettingsView : UserControl
         if (SoundThemeCheckBox?.IsChecked == true)
         {
             MainWindow.SoundTheme = "System";
-            if (SoundThemeCheckBox != null) SoundThemeCheckBox.Content = "Выключить звуки";
+            if (SoundThemeCheckBox != null) SoundThemeCheckBox.Content = "Звуки игры";
         }
         else
         {
             MainWindow.SoundTheme = "None";
-            if (SoundThemeCheckBox != null) SoundThemeCheckBox.Content = "Включить звуки";
+            if (SoundThemeCheckBox != null) SoundThemeCheckBox.Content = "Звуки игры";
         }
 
         SoundService.ApplyTheme(MainWindow.SoundTheme);
         if (MainWindow.SoundTheme != "None") SoundService.PlayClick();
-        
+
         _updatingUI = false;
+    }
+
+    private void SquareInterfaceChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_updatingUI) return;
+        _updatingUI = true;
+
+        MainWindow.SquareInterface = SquareInterfaceCheckBox?.IsChecked == true;
+        if (SquareInterfaceCheckBox != null)
+            SquareInterfaceCheckBox.Content = "Квадратный интерфейс";
+
+        if (TopLevel.GetTopLevel(this) is MainWindow mw)
+            mw.ApplyVisualMode();
+
+        ApplyVisualMode();
+
+        _updatingUI = false;
+    }
+
+    private void ApplyNumericFieldVisualMode()
+    {
+        if (MaxDeleteDaysUpDown == null) return;
+        MaxDeleteDaysUpDown.CornerRadius = new Avalonia.CornerRadius(MainWindow.SquareInterface ? 0 : 12);
+        MaxDeleteDaysUpDown.ShowButtonSpinner = false;
+    }
+
+    public void ApplyVisualMode()
+    {
+        var radius = MainWindow.SquareInterface ? 0 : 12;
+        if (VideoPathTextBox != null) VideoPathTextBox.CornerRadius = new Avalonia.CornerRadius(radius);
+        if (MusicPathTextBox != null) MusicPathTextBox.CornerRadius = new Avalonia.CornerRadius(radius);
+        if (SelectVideoPathButton != null) SelectVideoPathButton.CornerRadius = new Avalonia.CornerRadius(radius);
+        if (SelectMusicPathButton != null) SelectMusicPathButton.CornerRadius = new Avalonia.CornerRadius(radius);
+        if (ExportLogsButton != null) ExportLogsButton.CornerRadius = new Avalonia.CornerRadius(radius);
+        if (AboutButton != null) AboutButton.CornerRadius = new Avalonia.CornerRadius(radius);
+        ApplyNumericFieldVisualMode();
     }
 
     private void ApplyFontChoice()
@@ -204,8 +249,10 @@ public partial class SettingsView : UserControl
             }
 
             if (!MainWindow.SeparatePaths) MainWindow.MusicPath = MainWindow.VideoPath;
-            VideoPathTextBox.Text = MainWindow.VideoPath;
-            MusicPathTextBox.Text = MainWindow.MusicPath;
+            VideoPathTextBox.Watermark = isDefault ? "Используется путь по умолчанию" : null;
+            MusicPathTextBox.Watermark = isDefault ? "Используется путь по умолчанию" : null;
+            VideoPathTextBox.Text = isDefault ? "" : MainWindow.VideoPath;
+            MusicPathTextBox.Text = isDefault ? "" : MainWindow.MusicPath;
 
             VideoPathTextBox.IsEnabled = !isDefault;
             if (SelectVideoPathButton != null) SelectVideoPathButton.IsEnabled = !isDefault;
@@ -218,7 +265,7 @@ public partial class SettingsView : UserControl
             if (!MainWindow.SeparatePaths)
             {
                 MusicPathTextBox.IsEnabled = false;
-                MusicPathTextBox.Text = MainWindow.VideoPath;
+                MusicPathTextBox.Text = isDefault ? "" : MainWindow.VideoPath;
             }
             else
             {
@@ -229,6 +276,7 @@ public partial class SettingsView : UserControl
             {
                 if (MaxDeleteDaysUpDown != null)
                 {
+                    ApplyNumericFieldVisualMode();
                     if (MainWindow.LogAutoDeleteInfinite)
                         MaxDeleteDaysUpDown.Value = 365m;
                     else
@@ -276,6 +324,7 @@ public partial class SettingsView : UserControl
             }
 
             UpdatePathControls();
+            ApplyVisualMode();
             AttachMaxDaysHandlers();
             ValidatePaths();
         }
@@ -707,6 +756,7 @@ public partial class SettingsView : UserControl
         bool changed =
             _originalFontChoice != MainWindow.FontChoice ||
             _originalSoundTheme != MainWindow.SoundTheme ||
+            _originalSquareInterface != MainWindow.SquareInterface ||
             _originalVideoPath != MainWindow.VideoPath ||
             _originalMusicPath != MainWindow.MusicPath ||
             _originalLogAutoDeleteInfinite != MainWindow.LogAutoDeleteInfinite ||
@@ -721,6 +771,7 @@ public partial class SettingsView : UserControl
         _originalMusicPath = MainWindow.MusicPath;
         _originalFontChoice = MainWindow.FontChoice ?? "Default";
         _originalSoundTheme = MainWindow.SoundTheme ?? "None";
+        _originalSquareInterface = MainWindow.SquareInterface;
         _originalLogAutoDeleteInfinite = MainWindow.LogAutoDeleteInfinite;
         _originalLogAutoDeleteMaxDays = MainWindow.LogAutoDeleteMaxDays;
         _originalDisableLogs = MainWindow.DisableLogs;

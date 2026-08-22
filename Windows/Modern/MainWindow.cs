@@ -1,4 +1,5 @@
-﻿﻿﻿using Avalonia.Controls;
+﻿﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Interactivity;
 using Avalonia.Input;
@@ -26,6 +27,7 @@ public partial class MainWindow : Window
     // Новые глобальные настройки внешнего вида
     public static string FontChoice { get; set; } = "Default";
     public static string SoundTheme { get; set; } = "None"; // "None" или "System"
+    public static bool SquareInterface { get; set; } = false;
     private double _inlineLastPercent = 0;
     private string _inlineLastMessage = "";
     private bool _isDownloadingAudio = false;
@@ -102,6 +104,8 @@ public static string MusicPath = AppPaths.DownloadsRoot;
 
     private static string GetOutputPath(string basePath, string subfolder)
     {
+        if (UseDefaultPath || string.Equals(basePath, "Используется путь по умолчанию", StringComparison.Ordinal))
+            basePath = AppPaths.DownloadsRoot;
         if (!CreateSubfolders) return basePath;
         if (string.IsNullOrWhiteSpace(basePath)) return basePath;
 
@@ -127,10 +131,10 @@ public static string MusicPath = AppPaths.DownloadsRoot;
         InitializeComponent();
         SoundService.ApplyTheme(SoundTheme);
         SoundService.AttachClickSound(this);
+        ApplyVisualMode();
         _downloadContent = MainContent.Content;
         InitSessionLog();
 
-        // Сохраняем лог при падении приложения
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
         {
             try
@@ -139,6 +143,23 @@ public static string MusicPath = AppPaths.DownloadsRoot;
             }
             catch { }
         };
+    }
+
+    public void ApplyVisualMode()
+    {
+        var radius = SquareInterface ? 0 : 12;
+
+        if (UrlBox != null) UrlBox.CornerRadius = new CornerRadius(radius);
+        if (PasteButton != null) PasteButton.CornerRadius = new CornerRadius(radius);
+        if (FindButton != null) FindButton.CornerRadius = new CornerRadius(radius);
+        if (DownloadButton != null) DownloadButton.CornerRadius = new CornerRadius(radius);
+        if (DownloadTypeList != null) DownloadTypeList.CornerRadius = new CornerRadius(radius);
+        if (QualityOrBitrateList != null) QualityOrBitrateList.CornerRadius = new CornerRadius(radius);
+        if (AudioList != null) AudioList.CornerRadius = new CornerRadius(radius);
+        if (DurationBorder != null) DurationBorder.CornerRadius = new CornerRadius(SquareInterface ? 0 : 4);
+        if (PreviewImage != null && PreviewImage.Parent is Border border)
+            border.CornerRadius = new CornerRadius(radius);
+        _historyView?.ApplyVisualMode();
     }
 
 
@@ -433,6 +454,11 @@ private async void OnPasteClick(object? sender, RoutedEventArgs e)
         FindButton.IsEnabled = true; 
     }
 }
+
+    private void UrlBox_Cut_Click(object? sender, RoutedEventArgs e) { UrlBox?.Cut(); }
+    private void UrlBox_Copy_Click(object? sender, RoutedEventArgs e) { UrlBox?.Copy(); }
+    private void UrlBox_Paste_Click(object? sender, RoutedEventArgs e) { UrlBox?.Paste(); }
+    private void UrlBox_SelectAll_Click(object? sender, RoutedEventArgs e) { UrlBox?.SelectAll(); }
 
 private void OnUrlTextChanged(object? sender, TextChangedEventArgs e)
 {
@@ -877,7 +903,8 @@ public async Task UpdateInlineProgress(double percent, string message)
                 // ДОБАВЬ ЭТУ СТРОКУ:
                 SetVideoDescription(description);
                 VideoAuthor.Text = "Автор: " + author;
-                VideoDuration.Text = "Время: " + duration;
+                VideoDuration.Text = duration;
+                DurationBorder.IsVisible = !string.IsNullOrWhiteSpace(duration);
                 PreviewImage.Source = bitmap;
                 InfoPanel.IsVisible = true;
                 ApplyDownloadTypeUI();

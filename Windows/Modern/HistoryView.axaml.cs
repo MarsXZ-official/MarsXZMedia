@@ -12,6 +12,14 @@ namespace MarsXZMedia;
 public partial class HistoryView : UserControl
 {
     public event Action<HistoryEntry>? EntrySelected;
+
+    private static IBrush ThemeBrush(string key, IBrush fallback)
+    {
+        return Avalonia.Application.Current?.Resources[key] as IBrush ?? fallback;
+    }
+
+    private static IBrush HistoryBorderBrush => Brushes.Black;
+
     public HistoryView()
     {
         InitializeComponent();
@@ -21,6 +29,35 @@ public partial class HistoryView : UserControl
     public void RefreshView()
     {
         BuildView();
+    }
+
+    public void ApplyVisualMode()
+    {
+        var radius = MainWindow.SquareInterface ? 0 : 22;
+        foreach (var control in GroupsPanel.Children)
+        {
+            ApplyRadius(control, radius);
+        }
+    }
+
+    private static void ApplyRadius(Control control, double radius)
+    {
+        if (control is Border border)
+        {
+            border.CornerRadius = new CornerRadius(radius);
+            if (border.Child != null)
+                ApplyRadius(border.Child, 0);
+            return;
+        }
+
+        if (control is Button button)
+            button.CornerRadius = new CornerRadius(radius);
+
+        if (control is Panel panel)
+        {
+            foreach (var child in panel.Children)
+                ApplyRadius(child, radius);
+        }
     }
 
     private void BuildView()
@@ -60,7 +97,7 @@ public partial class HistoryView : UserControl
                 var items = group.OrderByDescending(x => x.Timestamp).ToList();
                 if (items.Count == 1)
                 {
-                    GroupsPanel.Children.Add(CreateEntryButton(items[0], indicator: "", compact: false));
+                    GroupsPanel.Children.Add(CreateEntryBlock(items[0]));
                 }
                 else
                 {
@@ -68,16 +105,21 @@ public partial class HistoryView : UserControl
                 }
             }
         }
+
+        ApplyVisualMode();
     }
 
     private Control CreateGroupPanel(System.Collections.Generic.List<HistoryEntry> items)
     {
         var latest = items[0];
+        var primaryText = ThemeBrush("AppTextPrimary", Brushes.Black);
+        var secondaryText = ThemeBrush("AppTextSecondary", Brushes.Gray);
+        var surface = ThemeBrush("AppSurface", Brushes.White);
         var indicatorText = new TextBlock
         {
             Text = "^",
             FontSize = 16,
-            Foreground = Brushes.Gray,
+            Foreground = secondaryText,
             Width = 18,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -104,7 +146,7 @@ public partial class HistoryView : UserControl
         {
             Text = $"[{latest.Timestamp.ToLocalTime():HH:mm}]",
             FontSize = 14,
-            Foreground = Brushes.Gray,
+            Foreground = secondaryText,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(6, 0, 0, 0)
         });
@@ -114,7 +156,11 @@ public partial class HistoryView : UserControl
             Content = header,
             HorizontalContentAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(10),
-            Tag = latest
+            Tag = latest,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            Foreground = primaryText
         };
 
         var childrenPanel = new StackPanel
@@ -135,15 +181,26 @@ public partial class HistoryView : UserControl
             indicatorText.Text = childrenPanel.IsVisible ? "˅" : "^";
         };
 
-        var groupPanel = new StackPanel { Spacing = 4 };
-        groupPanel.Children.Add(headerButton);
-        groupPanel.Children.Add(childrenPanel);
-        return groupPanel;
+        var groupContent = new StackPanel { Spacing = 0 };
+        groupContent.Children.Add(headerButton);
+        groupContent.Children.Add(childrenPanel);
+
+        return new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Background = surface,
+            BorderBrush = HistoryBorderBrush,
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(0),
+            Child = groupContent
+        };
     }
 
     private Button CreateEntryButton(HistoryEntry entry, string indicator, bool compact)
     {
         var timeText = entry.Timestamp.ToLocalTime().ToString("HH:mm");
+        var primaryText = ThemeBrush("AppTextPrimary", Brushes.Black);
+        var secondaryText = ThemeBrush("AppTextSecondary", Brushes.Gray);
 
         var header = new StackPanel
         {
@@ -155,7 +212,7 @@ public partial class HistoryView : UserControl
         {
             Text = indicator,
             FontSize = compact ? 14 : 16,
-            Foreground = Brushes.Gray,
+            Foreground = secondaryText,
             Width = 18,
             VerticalAlignment = VerticalAlignment.Center
         });
@@ -174,7 +231,7 @@ public partial class HistoryView : UserControl
         {
             Text = $"[{timeText}]",
             FontSize = compact ? 12 : 14,
-            Foreground = Brushes.Gray,
+            Foreground = secondaryText,
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(6, 0, 0, 0)
         });
@@ -184,11 +241,28 @@ public partial class HistoryView : UserControl
             Content = header,
             HorizontalContentAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(10),
-            Tag = entry
+            Tag = entry,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            Foreground = primaryText
         };
 
         button.Click += (_, _) => EntrySelected?.Invoke(entry);
         return button;
+    }
+
+    private Border CreateEntryBlock(HistoryEntry entry)
+    {
+        return new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Background = ThemeBrush("AppSurface", Brushes.White),
+            BorderBrush = HistoryBorderBrush,
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(MainWindow.SquareInterface ? 0 : 22),
+            Child = CreateEntryButton(entry, indicator: "", compact: false)
+        };
     }
 
     private string FormatSectionTitle(DateTime date)

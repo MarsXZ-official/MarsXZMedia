@@ -2,39 +2,41 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MarsXZMedia.SettingsView"
              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-             Background="White">
+             Background="{DynamicResource AppWindowBackground}">
 
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Border Margin="20" Padding="15" Background="Transparent">
-                <StackPanel Spacing="10" MaxWidth="580" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="6" MaxWidth="580" HorizontalAlignment="Stretch">
   
                     <TextBlock Text="Настройки приложения" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
 
                     <Separator/>
 
-                    <TextBlock Text="Внешний вид" FontWeight="Bold" Foreground="Gray" HorizontalAlignment="Center" Margin="0,10,0,0"/>
-                    <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center" Margin="0,10,0,10">
-                        <CheckBox x:Name="FontChoiceCheckBox" Checked="FontChoiceChanged" Unchecked="FontChoiceChanged"/>
-                        <CheckBox x:Name="SoundThemeCheckBox" Checked="SoundThemeChanged" Unchecked="SoundThemeChanged"/>
+                    <TextBlock Text="Оформление Minecraft" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondary}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    <StackPanel Spacing="4" HorizontalAlignment="Center" Margin="0,10,0,10">
+                        <CheckBox x:Name="SquareInterfaceCheckBox" Content="Квадратный интерфейс" Checked="SquareInterfaceChanged" Unchecked="SquareInterfaceChanged"/>
+                        <CheckBox x:Name="FontChoiceCheckBox" Content="Пиксельный шрифт" Checked="FontChoiceChanged" Unchecked="FontChoiceChanged"/>
+                        <CheckBox x:Name="SoundThemeCheckBox" Content="Звуки игры" Checked="SoundThemeChanged" Unchecked="SoundThemeChanged"/>
                     </StackPanel>
 
-                    <Separator Margin="0,10,0,10"/>
+                    <Separator Margin="0,4,0,4"/>
                     
-                    <TextBlock x:Name="VideoPathLabel" Text="Путь к Video и Audio:" FontWeight="Bold" TextWrapping="Wrap" Foreground="Gray"/>
+                    <TextBlock x:Name="VideoPathLabel" Text="Путь к Video и Audio:" FontWeight="Bold" TextWrapping="Wrap" Foreground="{DynamicResource AppTextSecondary}"/>
                     <Grid ColumnDefinitions="*, Auto">
                         <TextBox x:Name="VideoPathTextBox" 
                                  VerticalContentAlignment="Center" 
+                                 CornerRadius="12"
                                  TextChanged="VideoPathChanged" 
                                  HorizontalAlignment="Stretch" 
                                  TextWrapping="NoWrap" 
                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 Background="#F0F0F0" BorderThickness="0"/>
-                        <Button x:Name="SelectVideoPathButton" Grid.Column="1" Content="..." Click="SelectVideoPath" Margin="10,0,0,0" Background="#D3D3D3"/>
+                                 Background="{DynamicResource AppInputBackground}" BorderBrush="{DynamicResource AppInputBorder}" BorderThickness="1" Foreground="{DynamicResource AppTextPrimary}"/>
+                        <Button x:Name="SelectVideoPathButton" Grid.Column="1" Content="..." Click="SelectVideoPath" Margin="10,0,0,0" Background="{DynamicResource AppActionButtonBackground}" Foreground="{DynamicResource AppActionButtonForeground}" BorderBrush="{DynamicResource AppActionButtonBorder}"/>
                     </Grid>
 
                     <StackPanel x:Name="MusicPanel" IsVisible="False">
-                        <TextBlock Text="Путь к Audio:" FontWeight="Bold" Foreground="Gray" Margin="0,8,0,0"/>
+                        <TextBlock Text="Путь к Audio:" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondary}" Margin="0,6,0,0"/>
                         <Grid ColumnDefinitions="*, Auto">
                             <TextBox x:Name="MusicPathTextBox" 
                                      VerticalContentAlignment="Center" 
@@ -42,8 +44,8 @@
                                      HorizontalAlignment="Stretch" 
                                      TextWrapping="NoWrap" 
                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                     Background="#F0F0F0" BorderThickness="0"/>
-                            <Button x:Name="SelectMusicPathButton" Grid.Column="1" Content="..." Click="SelectMusicPath" Margin="10,0,0,0" Background="#D3D3D3"/>
+                                     Background="{DynamicResource AppInputBackground}" BorderBrush="{DynamicResource AppInputBorder}" BorderThickness="1" Foreground="{DynamicResource AppTextPrimary}"/>
+                            <Button x:Name="SelectMusicPathButton" Grid.Column="1" Content="..." Click="SelectMusicPath" Margin="10,0,0,0" Background="{DynamicResource AppActionButtonBackground}" Foreground="{DynamicResource AppActionButtonForeground}" BorderBrush="{DynamicResource AppActionButtonBorder}"/>
                         </Grid>
                     </StackPanel>
 
@@ -52,20 +54,30 @@
                     <CheckBox x:Name="DisableOpenFileCheckBox" Content="Не открывать скачанный файл" Checked="DisableOpenFileChecked" Unchecked="DisableOpenFileUnchecked"/>
                     <CheckBox x:Name="UseDefaultPathCheckBox" Content="Использовать путь по умолчанию" Checked="UseDefaultPathChecked" Unchecked="UseDefaultPathUnchecked"/>
 
-                    <Separator Margin="0,10,0,10"/>
+                    <Separator Margin="0,4,0,4"/>
 
-                    <TextBlock Text="Логирование" FontWeight="Bold" Foreground="Gray" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Логирование" FontWeight="Bold" Foreground="{DynamicResource AppTextSecondary}" HorizontalAlignment="Center"/>
                
                     <StackPanel Spacing="10" HorizontalAlignment="Center">
-                        <Button x:Name="ExportLogsButton" Content="ЭКСПОРТ ЛОГОВ" Click="ExportLogs" Width="180" HorizontalAlignment="Center" Background="#E0E0E0" FontWeight="Bold"/>
+                        <Button x:Name="ExportLogsButton" Content="ЭКСПОРТ ЛОГОВ" Click="ExportLogs" Width="180" HorizontalAlignment="Center" Background="{DynamicResource AppActionButtonBackground}" Foreground="{DynamicResource AppActionButtonForeground}" BorderBrush="{DynamicResource AppActionButtonBorder}" FontWeight="Bold"/>
                         <CheckBox x:Name="DisableLogsCheckBox" Content="Не создавать логи" Checked="DisableLogsChecked" Unchecked="DisableLogsUnchecked" HorizontalAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Margin="0,10,0,0" Spacing="8" HorizontalAlignment="Stretch">
                         <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="Хранить (дней):" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="Gray"/>
+                            <TextBlock Text="Хранить (дней):" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource AppTextSecondary}"/>
                             <NumericUpDown x:Name="MaxDeleteDaysUpDown" 
-                                           Width="120" 
+                                           Width="52" 
+                                           CornerRadius="0"
+                                           ClipToBounds="True"
+                                           ShowButtonSpinner="False"
+                                           FontSize="18"
+                                           HorizontalContentAlignment="Center"
+                                           Foreground="{DynamicResource AppTextPrimary}"
+                                           Opacity="1"
+                                           Background="{DynamicResource AppInputBackground}"
+                                           BorderBrush="{DynamicResource AppInputBorder}"
+                                           BorderThickness="1"
                                            Minimum="0" Maximum="365" 
                                            Increment="1" 
                                            ValueChanged="MaxDeleteDaysChanged" 
@@ -78,12 +90,12 @@
                                   Checked="InfiniteChecked" 
                                   Unchecked="InfiniteUnchecked"/>
        
-                        <TextBlock x:Name="InfiniteExtraText" HorizontalAlignment="Center" IsVisible="False" Foreground="Gray"/>
+                        <TextBlock x:Name="InfiniteExtraText" HorizontalAlignment="Center" IsVisible="False" Foreground="{DynamicResource AppTextSecondary}"/>
                     </StackPanel>
 
                     <TextBlock x:Name="ErrorTextBlock" Foreground="Red" IsVisible="False" TextWrapping="Wrap" HorizontalAlignment="Center"/>
 
-                    <Separator Margin="0,10,0,10"/>
+                    <Separator Margin="0,4,0,4"/>
                     <Button x:Name="AboutButton" Content="О программе" Click="OpenAbout" Width="180" HorizontalAlignment="Center" />
                 </StackPanel>
             </Border>
