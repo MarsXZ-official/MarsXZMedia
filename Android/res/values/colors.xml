@@ -1,18 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    
-    <!-- Minecraft/MarsXZ Style Colors -->
+    <!-- Basic Colors -->
+    <color name="pure_black">#000000</color>
+    <color name="pure_white">#FFFFFF</color>
+
+    <!-- Semantic Theme Colors (Light) -->
+    <color name="app_background">#FFFFFF</color>
+    <color name="surface_color">#F5F5F5</color>
+    <color name="text_primary">#111111</color>
+    <color name="text_secondary">#666666</color>
+    <color name="divider_color">#E0E0E0</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="link_color">#1a73e8</color>
+
+    <!-- State Colors -->
+    <color name="bg_valid">#EAF7EA</color>
+    <color name="bg_invalid">#FDECEC</color>
+
+    <!-- Button Colors (Light) -->
+    <color name="mc_button_inactive_bg">#E0E0E0</color>
+    <color name="mc_button_inactive_border">#BDBDBD</color>
+    <color name="mc_button_inactive_text">#9E9E9E</color>
+    <color name="mc_stone_bg">#BCBCBC</color>
+    <color name="mc_stone_border">#8A8A8A</color>
+    <color name="mc_stone_text">#000000</color>
+
+    <!-- Minecraft Style Colors -->
     <color name="mc_gray_bg">#7C7C7C</color>
     <color name="mc_gray_border">#2F2F2F</color>
-    
     <color name="mc_green_bg">#3C8527</color>
     <color name="mc_green_border">#1E4613</color>
     <color name="mc_green_text">#55FF55</color>
-    
-    <color name="mc_stone_bg">#6D6D6D</color>
-    <color name="mc_stone_border">#2F2F2F</color>
-    
     <color name="mc_youtube_bg">#CC0000</color>
+
+    <!-- Legacy names for compatibility -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
 </resources>

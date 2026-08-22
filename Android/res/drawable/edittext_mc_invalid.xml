@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Светло-красный фон -->
-    <solid android:color="#FDECEC" />
-    <!-- Темно-красная обводка -->
-    <stroke android:width="2dp" android:color="#C62828" />
-</shape>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false" android:drawable="@drawable/edittext_border_disabled" />
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bg_invalid" />
+            <stroke android:width="2dp" android:color="#C62828" />
+            <corners android:radius="?attr/appCornerRadius" />
+        </shape>
+    </item>
+</selector>

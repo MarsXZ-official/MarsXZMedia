@@ -5,12 +5,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="?android:attr/colorBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="?android:attr/colorBackground"
         android:paddingStart="12dp"
         android:paddingEnd="4dp"
         android:paddingTop="8dp"
@@ -24,7 +25,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="О программе"
-            android:textColor="#111111"
+            android:textColor="?android:attr/textColorPrimary"
             android:textSize="17sp"
             android:textStyle="bold"
             app:layout_constraintTop_toTopOf="parent"
@@ -40,7 +41,7 @@
             android:scaleType="centerInside"
             android:contentDescription="Назад"
             android:src="@drawable/ic_close"
-            app:tint="#333333"
+            app:tint="?android:attr/textColorPrimary"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -60,6 +61,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
+        android:background="?android:attr/colorBackground"
         app:layout_constraintTop_toBottomOf="@id/topRedLine"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -81,8 +83,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="58dp"
                     android:gravity="center"
-                    android:text="MarsXZ Media v1.2.0"
-                    android:textColor="#000000"
+                    android:text="MarsXZ Media v1.3.5"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="22sp"
                     android:textStyle="bold" />
             </FrameLayout>
@@ -93,31 +95,98 @@
                 android:text="MarsXZ Media — нативное Android-приложение для эффективной загрузки контента с YouTube."
                 android:layout_marginBottom="12dp"
                 android:textSize="16sp"
-                android:textColor="#333333" />
+                android:textColor="?android:attr/textColorPrimary" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="• Работает на базе NewPipeExtractor для быстрого получения данных о потоках и форматах."
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="8dp"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="• Использует кастомный DownloaderImpl для стабильной многопоточной загрузки."
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="8dp"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="• Обработка медиафайлов и склейка дорожек осуществляется через FFmpeg Mobile."
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="16dp"/>
+
+            <!-- СЕКЦИЯ ПОДДЕРЖКИ -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/dividerVertical"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Поддержать проект ❤️"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="В силу возраста я пока не могу принимать финансовые пожертвования. Но если приложение вам помогло, лучшей поддержкой будет подписка на мой YouTube-канал или ⭐ звездочка проекту на GitHub!"
+                android:textColor="?android:attr/textColorSecondary"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/tvSupportYoutube"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="YouTube канал"
+                    android:textColor="@color/link_color"
+                    android:background="@drawable/email_button_border"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvSupportGithub"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="Проект на GitHub"
+                    android:textColor="@color/link_color"
+                    android:background="@drawable/email_button_border"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#CCCCCC"
+                android:background="?android:attr/dividerVertical"
+                android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
+            <!-- КОНЕЦ СЕКЦИИ ПОДДЕРЖКИ -->
 
             <TextView
                 android:layout_width="match_parent"
@@ -126,20 +195,21 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"
-                android:textColor="#111111" />
+                android:textColor="?android:attr/textColorPrimary" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Если вы обнаружили ошибку или недочёт в работе MarsXZ Media, напишите:"
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="12dp" />
 
             <TextView
                 android:id="@+id/tvSupportEmail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="marsxz8656@gmail.com"
-                android:textColor="#1a73e8"
+                android:text="marsmanecraft@gmail.com"
+                android:textColor="@color/link_color"
                 android:textStyle="normal"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
@@ -154,7 +224,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#CCCCCC"
+                android:background="?android:attr/dividerVertical"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"/>
 
@@ -162,6 +232,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="© MarsXZ, 2026. Все права защищены."
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="4dp"
                 android:textSize="12sp"/>
 
@@ -169,6 +240,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Проект использует компоненты с открытым исходным кодом."
+                android:textColor="?android:attr/textColorSecondary"
                 android:textSize="12sp"/>
 
         </LinearLayout>

@@ -16,27 +16,15 @@
         <!-- Global Button Style -->
         <item name="materialButtonStyle">@style/Widget.MarsXZMedia.Button</item>
 
-        <!-- Light Theme: Dark Icons (true) -->
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
-        <item name="android:windowContentOverlay">@null</item>
+        <!-- Dark Theme: Light Icons (false) -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
     </style>
-
-    <style name="Theme.MarsXZMedia" parent="Base.Theme.MarsXZMedia" />
 
     <!-- Square Minecraft Style -->
     <style name="Theme.MarsXZMedia.Square" parent="Base.Theme.MarsXZMedia">
         <item name="appCornerRadius">0dp</item>
         <item name="isMinecraftStyle">true</item>
-    </style>
-
-    <!-- Theme with Monocraft font -->
-    <style name="Theme.MarsXZMedia.Monocraft" parent="Base.Theme.MarsXZMedia">
-        <item name="android:fontFamily">@font/monocraft_font</item>
-    </style>
-
-    <style name="Theme.MarsXZMedia.Square.Monocraft" parent="Theme.MarsXZMedia.Square">
-        <item name="android:fontFamily">@font/monocraft_font</item>
     </style>
 
     <style name="Widget.MarsXZMedia.Button" parent="Widget.MaterialComponents.Button">

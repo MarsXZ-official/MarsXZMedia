@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Semantic Theme Colors (Dark) -->
+    <color name="app_background">#121212</color>
+    <color name="surface_color">#1E1E1E</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#AAAAAA</color>
+    <color name="divider_color">#333333</color>
+    <color name="card_background">#1E1E1E</color>
+    <color name="link_color">#64B5F6</color>
+
+    <!-- State Colors (Dark) -->
+    <color name="bg_valid">#1B331B</color>
+    <color name="bg_invalid">#331B1B</color>
+
+    <!-- Button Colors (Dark) -->
+    <color name="mc_button_inactive_bg">#2F2F2F</color>
+    <color name="mc_button_inactive_border">#4A4A4A</color>
+    <color name="mc_button_inactive_text">#757575</color>
+    <color name="mc_stone_bg">#3D3D3D</color>
+    <color name="mc_stone_border">#2F2F2F</color>
+    <color name="mc_stone_text">#FFFFFF</color>
+
+    <!-- Minecraft Style Colors (Dark Mode Adjustments) -->
+    <color name="mc_gray_bg">#2F2F2F</color>
+    <color name="mc_gray_border">#7C7C7C</color>
+
+    <!-- Legacy names for compatibility (Swapped) -->
+    <color name="black">#FFFFFFFF</color>
+    <color name="white">#FF121212</color>
+</resources>

@@ -4,13 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="?android:attr/colorBackground">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
+        android:background="?android:attr/colorBackground"
         android:paddingStart="12dp"
         android:paddingEnd="4dp"
         app:layout_constraintTop_toTopOf="parent"
@@ -22,7 +22,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Настройки приложения"
-            android:textColor="#111111"
+            android:textColor="?android:attr/textColorPrimary"
             android:textSize="17sp"
             android:textStyle="bold"
             android:layout_marginTop="12dp"
@@ -40,7 +40,7 @@
             android:contentDescription="Назад"
             android:scaleType="centerInside"
             android:src="@drawable/ic_close"
-            app:tint="#333333"
+            app:tint="?android:attr/textColorPrimary"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -61,6 +61,7 @@
         android:layout_height="0dp"
         android:fillViewport="true"
         android:padding="16dp"
+        android:background="?android:attr/colorBackground"
         app:layout_constraintTop_toBottomOf="@id/topRedLine"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -74,8 +75,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Внешний вид"
-                android:textColor="#808080"
+                android:text="Оформление Minecraft"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textStyle="bold"
                 android:gravity="center"
                 android:layout_marginBottom="12dp" />
@@ -88,23 +89,33 @@
                 android:layout_marginBottom="16dp">
 
                 <CheckBox
+                    android:id="@+id/cbMinecraftUI"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:text="Квадратный интерфейс"
+                    android:layout_marginBottom="4dp" />
+
+                <CheckBox
                     android:id="@+id/cbFontMonoCraft"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Включить шрифт MonoCraft"
-                    android:layout_marginBottom="8dp" />
+                    android:text="Пиксельный шрифт"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginBottom="4dp" />
 
                 <CheckBox
                     android:id="@+id/cbSoundsMinecraft"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Включить звук Minecraft" />
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:text="Звуки игры" />
             </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#E0E0E0"
+                android:background="?android:attr/dividerVertical"
                 android:layout_marginBottom="16dp" />
 
             <TextView
@@ -112,7 +123,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Путь к Video и Audio:"
-                android:textColor="#808080"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textStyle="bold"
                 android:layout_marginBottom="4dp" />
 
@@ -127,7 +138,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:padding="10dp"
-                    android:background="#F0F0F0"
+                    android:background="@drawable/edittext_selector"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="14sp"
                     android:singleLine="true"
                     android:inputType="textUri"
@@ -138,7 +150,8 @@
                     android:layout_width="50dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="..." />
+                    android:text="..."
+                    android:background="@drawable/btn_mc_stone" />
             </LinearLayout>
 
             <LinearLayout
@@ -151,7 +164,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Путь к Audio:"
-                    android:textColor="#808080"
+                    android:textColor="?android:attr/textColorSecondary"
                     android:textStyle="bold"
                     android:layout_marginBottom="4dp" />
                 <LinearLayout
@@ -165,7 +178,8 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:padding="10dp"
-                        android:background="#F0F0F0"
+                        android:background="@drawable/edittext_selector"
+                        android:textColor="?android:attr/textColorPrimary"
                         android:textSize="14sp"
                         android:singleLine="true"
                         android:inputType="textUri"
@@ -176,7 +190,8 @@
                         android:layout_width="50dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="..." />
+                        android:text="..."
+                        android:background="@drawable/btn_mc_stone" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -184,37 +199,41 @@
                 android:id="@+id/cbSeparatePaths"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
                 android:text="Отдельно" />
 
             <CheckBox
                 android:id="@+id/cbNoSubfolders"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
                 android:text="Не создавать папки" />
 
             <CheckBox
                 android:id="@+id/cbDontOpenFile"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
                 android:text="Не открывать скачанный файл" />
 
             <CheckBox
                 android:id="@+id/cbUseDefaultPath"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
                 android:text="Использовать путь по умолчанию" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#E0E0E0"
+                android:background="?android:attr/dividerVertical"
                 android:layout_marginVertical="16dp" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Логирование"
-                android:textColor="#808080"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textStyle="bold"
                 android:gravity="center"
                 android:layout_marginBottom="12dp" />
@@ -226,12 +245,15 @@
                 android:text="ЭКСПОРТ ЛОГОВ"
                 android:textStyle="bold"
                 android:layout_gravity="center"
-                android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/btn_mc_stone_flat"
+                android:textColor="@color/mc_stone_text" />
 
             <CheckBox
                 android:id="@+id/cbDisableLogs"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
                 android:text="Не создавать логи"
                 android:layout_gravity="center" />
 
@@ -239,7 +261,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Авто-удаление логов:"
-                android:textColor="#808080"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textStyle="bold"
                 android:gravity="center"
                 android:layout_marginTop="16dp"
@@ -254,13 +276,15 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Хранить (макс. дней): " />
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:text="Хранить (дней): " />
                 <EditText
                     android:id="@+id/etMaxDays"
                     android:layout_width="60dp"
                     android:layout_height="wrap_content"
                     android:inputType="number"
-                    android:background="#F0F0F0"
+                    android:background="@drawable/edittext_selector"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:padding="8dp"
                     android:gravity="center" />
             </LinearLayout>
@@ -269,6 +293,7 @@
                 android:id="@+id/cbInfiniteLogs"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
                 android:text="Безгранично"
                 android:layout_gravity="center" />
 
@@ -278,7 +303,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:textSize="12sp"
-                android:textColor="#888888"
+                android:textColor="?android:attr/textColorSecondary"
                 android:text="Авто-удаление отключено (вечное хранилище)"
                 android:layout_marginTop="4dp" />
 
