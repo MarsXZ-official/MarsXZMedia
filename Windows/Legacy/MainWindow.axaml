@@ -78,7 +78,7 @@
         <Style Selector="Button.mc-btn.mc-btn-youtube:disabled">
             <Setter Property="Background" Value="#808080"/>
             <Setter Property="BorderBrush" Value="#555555"/>
-            <Setter Property="Foreground" Value="#D0D0D0"/>
+            <Setter Property="Foreground" Value="#888888"/>
         </Style>
     </Window.Styles>
 

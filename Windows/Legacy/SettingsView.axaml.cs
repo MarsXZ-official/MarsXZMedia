@@ -165,7 +165,21 @@ public partial class SettingsView : UserControl
     private void ApplyNumericFieldVisualMode()
     {
         if (MaxDeleteDaysUpDown == null) return;
-        MaxDeleteDaysUpDown.CornerRadius = new Avalonia.CornerRadius(MainWindow.SquareInterface ? 0 : 12);
+        
+        // Пытаемся найти нашу новую обертку DaysBorder в визуальном дереве
+        var daysBorder = this.FindControl<Avalonia.Controls.Border>("DaysBorder");
+        
+        if (daysBorder != null)
+        {
+            // Если обертка найдена, меняем скругление у неё
+            daysBorder.CornerRadius = new Avalonia.CornerRadius(MainWindow.SquareInterface ? 0 : 12);
+        }
+        else
+        {
+            // Резервный вариант, если обертки нет
+            MaxDeleteDaysUpDown.CornerRadius = new Avalonia.CornerRadius(MainWindow.SquareInterface ? 0 : 12);
+        }
+        
         MaxDeleteDaysUpDown.ShowButtonSpinner = false;
     }
 
