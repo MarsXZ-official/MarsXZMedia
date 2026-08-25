@@ -83,7 +83,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="58dp"
                     android:gravity="center"
-                    android:text="MarsXZ Media v1.3.5"
+                    android:text="MarsXZ Media v1.3.8"
                     android:textColor="?android:attr/textColorPrimary"
                     android:textSize="22sp"
                     android:textStyle="bold" />

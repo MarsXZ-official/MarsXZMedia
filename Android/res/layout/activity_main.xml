@@ -117,7 +117,7 @@
                 android:layout_height="56dp"
                 android:text="ИСКАТЬ ВИДЕО"
                 android:background="@drawable/btn_mc_youtube"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/btn_youtube_text"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:enabled="false"
