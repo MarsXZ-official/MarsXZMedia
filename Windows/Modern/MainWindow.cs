@@ -133,6 +133,7 @@ public static string MusicPath = AppPaths.DownloadsRoot;
         SoundService.AttachClickSound(this);
         ApplyVisualMode();
         _downloadContent = MainContent.Content;
+        UpdateNavigationState();
         InitSessionLog();
 
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
@@ -147,7 +148,7 @@ public static string MusicPath = AppPaths.DownloadsRoot;
 
     public void ApplyVisualMode()
     {
-        var radius = SquareInterface ? 0 : 12;
+        var radius = SquareInterface ? 0 : 10;
 
         if (UrlBox != null) UrlBox.CornerRadius = new CornerRadius(radius);
         if (PasteButton != null) PasteButton.CornerRadius = new CornerRadius(radius);
@@ -159,7 +160,36 @@ public static string MusicPath = AppPaths.DownloadsRoot;
         if (DurationBorder != null) DurationBorder.CornerRadius = new CornerRadius(SquareInterface ? 0 : 4);
         if (PreviewImage != null && PreviewImage.Parent is Border border)
             border.CornerRadius = new CornerRadius(radius);
+        if (PasteButton != null && Application.Current != null)
+        {
+            bool isDark = Application.Current.RequestedThemeVariant == ThemeVariant.Dark;
+            PasteButton.Background = isDark
+                ? new SolidColorBrush(Color.Parse("#333333"))
+                : Application.Current.Resources["AppActionButtonBackground"] as IBrush;
+            PasteButton.BorderBrush = isDark
+                ? Brushes.Transparent
+                : new SolidColorBrush(Color.Parse("#BDBDBD"));
+            PasteButton.BorderThickness = isDark ? new Thickness(0) : new Thickness(1);
+        }
         _historyView?.ApplyVisualMode();
+    }
+
+    private void UpdateNavigationState()
+    {
+        var activeItem = MainContent.Content switch
+        {
+            HistoryView => HistoryMenuItem,
+            SettingsView => SettingsMenuItem,
+            _ => MainMenuItem
+        };
+
+        foreach (var item in new[] { MainMenuItem, HistoryMenuItem, SettingsMenuItem })
+        {
+            item.FontWeight = item == activeItem ? FontWeight.Bold : FontWeight.Normal;
+            item.Foreground = item == activeItem
+                ? new SolidColorBrush(Color.Parse("#D32F2F"))
+                : (Application.Current?.Resources["AppTextPrimary"] as IBrush ?? Brushes.Black);
+        }
     }
 
 
@@ -200,6 +230,7 @@ private void OpenMain_Click(object? sender, RoutedEventArgs e)
     if (_downloadContent != null)
     {
         MainContent.Content = _downloadContent;
+        UpdateNavigationState();
     }
 }
 private void CreateWindowsToast()
@@ -317,6 +348,7 @@ private void OpenHistory_Click(object? sender, RoutedEventArgs e)
 
     _historyView.RefreshView();
     MainContent.Content = _historyView;
+    UpdateNavigationState();
 }
 
 private void OnHistoryEntrySelected(HistoryEntry entry)
@@ -326,6 +358,7 @@ private void OnHistoryEntrySelected(HistoryEntry entry)
         if (_downloadContent != null)
         {
             MainContent.Content = _downloadContent;
+            UpdateNavigationState();
         }
 
         UrlBox.Text = entry.Url;
@@ -343,10 +376,19 @@ private void OpenSettings_Click(object? sender, RoutedEventArgs e)
     var settingsView = new SettingsView();
     
     // Подписываемся на события сохранения или отмены, чтобы вернуться назад
-    settingsView.SettingsSaved += (s, args) => MainContent.Content = _downloadContent;
-    settingsView.SettingsCanceled += (s, args) => MainContent.Content = _downloadContent;
+    settingsView.SettingsSaved += (s, args) =>
+    {
+        MainContent.Content = _downloadContent;
+        UpdateNavigationState();
+    };
+    settingsView.SettingsCanceled += (s, args) =>
+    {
+        MainContent.Content = _downloadContent;
+        UpdateNavigationState();
+    };
 
     MainContent.Content = settingsView;
+    UpdateNavigationState();
 }
     private void ShowSettingsInline()
     {
@@ -365,6 +407,7 @@ private void OpenSettings_Click(object? sender, RoutedEventArgs e)
                     if (MainContent != null)
                     {
                         MainContent.Content = settings;
+                        UpdateNavigationState();
                     }
                     else
                     {
@@ -418,6 +461,11 @@ private void OpenSettings_Click(object? sender, RoutedEventArgs e)
     {
         try
         {
+            if (_downloadContent != null)
+            {
+                MainContent.Content = _downloadContent;
+                UpdateNavigationState();
+            }
         }
         catch (Exception ex)
         {

@@ -29,7 +29,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20" Spacing="0">
 
-            <TextBlock Text="MarsXZ Media v1.3.5"
+            <TextBlock Text="MarsXZ Media v1.3.8"
                        FontFamily="{DynamicResource AppFontBold}"
                        FontSize="22"
                        FontWeight="Bold"
